@@ -1,0 +1,4 @@
+interface:
+  display_name: "参考风格学术 PPT"
+  short_description: "参考答辩风格：蓝黑红文字、机构标识、模型表格与多图证据，控制学术汇报信息密度"
+  default_prompt: "使用 $research-ppt-skill 帮我做一份科研汇报PPT（先问我主题和材料）。"

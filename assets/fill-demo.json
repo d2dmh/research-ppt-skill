@@ -1,0 +1,584 @@
+{
+ "title": "高比例新能源下省级现货市场短期电价预测（改版对照）",
+ "meta": {
+  "brand": "xmu",
+  "author": "汇报人：×××",
+  "institution": "厦门大学能源学院",
+  "date": "2026.10"
+ },
+ "slides": [
+  {
+   "section": "02",
+   "section_title": "方法与技术路线",
+   "title": "2.1 技术路线：从多源数据到概率预测的五步流程",
+   "layout": "framework5",
+   "regions": {
+    "m1": {
+     "title": "① 数据与口径",
+     "items": [
+      {
+       "type": "text",
+       "text": "来源：市场披露数据\n样本：近三年",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [],
+       "bullet": true
+      },
+      {
+       "type": "flow",
+       "direction": "down",
+       "size": 15,
+       "items": [
+        "出清价 / 负荷 / 气象",
+        "统一 15 分钟粒度",
+        {
+         "label": "交易日与时区对齐",
+         "bold": true
+        }
+       ]
+      },
+      {
+       "type": "figure",
+       "label": "多源数据对齐",
+       "caption": "数据对齐（AI生成示意）",
+       "weight": 1,
+       "aspect": "4:3",
+       "prompt": "Minimal editorial illustration explaining time alignment of three data streams: three thin horizontal time-series lines (price, load, weather) with different tick spacing on the left converging into one evenly spaced 15-minute grid on the right. Drawn like a figure in Nature news: simple shapes, thin lines, flat colours, lots of white space, one accent colour (#C00000) on the aligned grid, the rest slate blue (#1D50A2) and gray. No text, no numbers, no 3D, no glow, no gradients. Aspect ratio 4:3."
+      }
+     ]
+    },
+    "m2": {
+     "title": "② 特征构建",
+     "items": [
+      {
+       "type": "text",
+       "text": "气象、供需、市场三层\n含备用率交叉项",
+       "size": 14,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "备用率交叉项"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "text",
+       "text": "气象 26 维、供需 27 维\n市场 15 维，共 68 维",
+       "size": 14,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "共 68 维"
+       ],
+       "bullet": true
+      }
+     ]
+    },
+    "m3": {
+     "title": "③ 模型与训练",
+     "valign": "middle",
+     "gap": 0.35,
+     "items": [
+      {
+       "type": "formula",
+       "latex": true,
+       "size": 17,
+       "blue": true,
+       "align": "center",
+       "lines": [
+        "\\hat{q}_{\\tau}(t) = f_{\\theta}(x_t; \\tau),\\ \\tau \\in \\{0.05, 0.10, \\dots, 0.95\\}"
+       ]
+      },
+      {
+       "type": "flow",
+       "size": 14,
+       "items": [
+        "共享时序编码器",
+        "分位数输出头",
+        {
+         "label": "19 条分位曲线",
+         "bold": true,
+         "color": "C00000"
+        }
+       ]
+      }
+     ]
+    },
+    "m4": {
+     "title": "④ 区间校准",
+     "items": [
+      {
+       "type": "text",
+       "text": "分时段做覆盖率校准\n尖峰时段单独调宽度",
+       "size": 14,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "分时段"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "text",
+       "text": "无校准 82.1%\n有校准 88.6%",
+       "size": 14,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "88.6%"
+       ],
+       "bullet": true
+      }
+     ]
+    },
+    "m5": {
+     "title": "⑤ 评价与交付",
+     "items": [
+      {
+       "type": "text",
+       "text": "点误差：MAE、RMSE\n复盘：按日统计偏差来源\n交付：逐日曲线与滚动月报",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [],
+       "bullet": true
+      },
+      {
+       "type": "table",
+       "size": 13,
+       "widths": [
+        1,
+        2.3
+       ],
+       "columns": [
+        "区间指标",
+        "含义"
+       ],
+       "rows": [
+        [
+         "PICP",
+         "真实值落入区间的比例"
+        ],
+        [
+         "PINAW",
+         "区间平均宽度（归一化）"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "两者要一起看：\n覆盖率够、区间又不宽，才算可用",
+       "size": 14,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "一起看"
+       ]
+      },
+      {
+       "type": "text",
+       "text": "对照基线：\nARIMA、XGBoost、LSTM",
+       "size": 14,
+       "color": "000000",
+       "bold": false,
+       "highlights": [],
+       "strong": [
+        "对照基线"
+       ]
+      }
+     ]
+    }
+   },
+   "takeaway": "五步里真正决定区间能不能用的是第②步的特征表达和第④步的分时段校准。",
+   "emphasis": [
+    "特征表达",
+    "分时段校准"
+   ],
+   "note": "注：流程为本方案设计，尚未全部完成实现；第③步公式为概率预测的通式；④中数字为 90% 区间覆盖率（原稿示意数据）。"
+  },
+  {
+   "section": "02",
+   "section_title": "方法与技术路线",
+   "title": "2.2 特征体系分三层，气象—供需的交叉项是核心增量",
+   "layout": "two_columns",
+   "regions": {
+    "left": {
+     "title": "三层共 68 维特征",
+     "items": [
+      {
+       "type": "table",
+       "size": 14,
+       "widths": [
+        0.9,
+        3.7,
+        0.7
+       ],
+       "columns": [
+        "层次",
+        "代表特征",
+        "维数"
+       ],
+       "rows": [
+        [
+         "气象层",
+         "温度、湿度、辐照、风速、体感温度",
+         "26"
+        ],
+        [
+         "供需层",
+         "系统负荷、净负荷、新能源出力、备用率",
+         "27"
+        ],
+        [
+         "市场层",
+         "历史出清价、负荷率、检修容量",
+         "15"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "交叉项：温度 × 净负荷、辐照 × 备用率、日前—实时价差",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "温度 × 净负荷"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "chart",
+       "title": "各特征组对误差下降的贡献 %（示意）",
+       "kind": "barh",
+       "size": 12,
+       "legend": false,
+       "labels": true,
+       "categories": [
+        "市场层",
+        "气象层",
+        "供需层",
+        "气象 × 供需"
+       ],
+       "series": [
+        {
+         "name": "贡献",
+         "values": [
+          11,
+          19,
+          28,
+          42
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "right": {
+     "title": "耦合关系怎么表达",
+     "items": [
+      {
+       "type": "formula",
+       "latex": true,
+       "size": 18,
+       "blue": true,
+       "h": 1.25,
+       "lines": [
+        "L_t^{\\text{net}} = L_t - P_t^{\\text{pv}} - P_t^{\\text{w}}",
+        "p_t = g\\left(\\frac{L_t^{\\text{net}} + R_t}{C_t^{\\text{avail}}}\\right) + \\varepsilon_t"
+       ]
+      },
+      {
+       "type": "text",
+       "text": "分子：净负荷 + 备用需求；分母：可调容量\n比值越大，系统越紧张，价格越容易冲高\n与气象的乘积显式输入，模型才学得会拐点",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "学得会拐点"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "chart",
+       "title": "价格随紧张度的拐点（示意）",
+       "kind": "line",
+       "size": 12,
+       "legend": false,
+       "min": 200,
+       "y_title": "元/MWh",
+       "categories": [
+        "0.6",
+        "0.7",
+        "0.8",
+        "0.9",
+        "1.0"
+       ],
+       "series": [
+        {
+         "name": "价格",
+         "values": [
+          280,
+          300,
+          330,
+          420,
+          640
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "takeaway": "把“紧张程度”写成显式变量，比让网络自己从原始气象里摸索更省样本、也更可解释。",
+   "emphasis": [
+    "更省样本",
+    "更可解释"
+   ],
+   "note": "注：特征维数为本方案设计值；贡献占比取自原稿消融示意数据；拐点曲线为示意。"
+  },
+  {
+   "section": "02",
+   "section_title": "方法与技术路线",
+   "title": "2.4 算例对象与实验条件",
+   "layout": "case_setup",
+   "regions": {
+    "left": {
+     "title": "算例对象与价格形成",
+     "items": [
+      {
+       "type": "figure",
+       "label": "省级现货市场价格形成",
+       "h": 3.45,
+       "aspect": "2:1",
+       "prompt": "Technical illustration for a research presentation: a provincial power system feeding an electricity spot market. On the left, a wind farm and a solar PV field under a partly cloudy sky; in the middle, a coal-fired plant and a hydro dam; on the right, a city skyline representing electricity load. Thin transmission lines run from all generators to a small dispatch/market building in the center-right. Style of a figure in an engineering journal or a technical manual: clean 2D side view, precise thin outlines, flat matte fills, realistic proportions, restrained detail. Muted palette limited to slate blue (#1D50A2), warm gray and a small amount of brick red on the market building. Plain white background, generous margins, subject arranged horizontally. No text, no labels, no numbers, no logos. No isometric view, no 3D render, no glossy or plastic look, no glow, no gradients, no particles, no holograms, no dramatic lighting. Aspect ratio 2:1.",
+       "caption": "图2 省级现货市场价格形成（AI生成示意）"
+      },
+      {
+       "type": "text",
+       "text": "对象：某省级现货市场，统调口径\n数据：出清价、机组出力、负荷、气象再分析",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "统调口径"
+       ],
+       "bullet": true
+      }
+     ]
+    },
+    "right": {
+     "title": "参数与实验条件",
+     "items": [
+      {
+       "type": "table",
+       "size": 14,
+       "widths": [
+        1.3,
+        2.4
+       ],
+       "columns": [
+        "项目",
+        "设置"
+       ],
+       "rows": [
+        [
+         "样本区间",
+         "2022-01 — 2024-12"
+        ],
+        [
+         "滚动方式",
+         "逐日滚动，预测未来 24 小时"
+        ],
+        [
+         "学习率 / 批大小",
+         "1e-3 / 64"
+        ],
+        [
+         "分位点",
+         "19 个（0.05—0.95）"
+        ],
+        [
+         "对照方法",
+         "ARIMA、XGBoost、LSTM 分位"
+        ]
+       ]
+      },
+      {
+       "type": "text",
+       "text": "样本划分（36 个月）",
+       "size": 14,
+       "color": "1D50A2",
+       "bold": true,
+       "highlights": []
+      },
+      {
+       "type": "flow",
+       "size": 14,
+       "items": [
+        "训练 24 个月",
+        "验证 4 个月",
+        "测试 8 个月"
+       ]
+      },
+      {
+       "type": "text",
+       "text": "评价：MAE、RMSE、PICP、PINAW\n全部在测试集上逐日滚动统计",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "逐日滚动统计"
+       ],
+       "bullet": true
+      }
+     ]
+    }
+   },
+   "takeaway": "算例覆盖四季与两类极端天气，用来检验区间在尖峰时段是否仍然可用，而不是只看全网平均误差。",
+   "emphasis": [
+    "尖峰时段"
+   ],
+   "note": "注：样本区间与参数为本方案设计的示例设置，实际算例待数据授权后确定。"
+  },
+  {
+   "section": "04",
+   "section_title": "结论与后续工作",
+   "title": "4.2 后续工作：数据、模型与现场验证三条线并行推进",
+   "layout": "three_columns",
+   "regions": {
+    "left": {
+     "title": "数据线",
+     "box": [
+      0.5,
+      1.5,
+      3.55,
+      2.5
+     ],
+     "items": [
+      {
+       "type": "text",
+       "text": "补齐极端天气样本\n申请机组检修与燃料成本数据\n再做一个省外市场横向对比",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "极端天气样本"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "text",
+       "text": "预期：尖峰价格能被解释清楚",
+       "size": 15,
+       "color": "C00000",
+       "bold": true,
+       "highlights": []
+      }
+     ]
+    },
+    "center": {
+     "title": "模型线",
+     "box": [
+      4.23,
+      1.5,
+      4.8,
+      2.5
+     ],
+     "items": [
+      {
+       "type": "text",
+       "text": "极端日单独校准，改为分段分位数头\n新能源出力预测的不确定性作为输入\n校准从离线改为逐月滚动",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "分段分位数头"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "text",
+       "text": "预期：极端日区间不再被穿透",
+       "size": 15,
+       "color": "C00000",
+       "bold": true,
+       "highlights": []
+      }
+     ]
+    },
+    "right": {
+     "title": "现场验证",
+     "box": [
+      9.2,
+      1.5,
+      3.8,
+      2.5
+     ],
+     "items": [
+      {
+       "type": "text",
+       "text": "与交易员日前申报做对照\n统计报贵与报便宜的实际代价\n预测与复盘做成日报",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "实际代价"
+       ],
+       "bullet": true
+      },
+      {
+       "type": "text",
+       "text": "预期：区间宽窄能折算成钱",
+       "size": 15,
+       "color": "C00000",
+       "bold": true,
+       "highlights": []
+      }
+     ]
+    },
+    "bottom": {
+     "title": "推进顺序：现场验证最先落地",
+     "box": [
+      0.5,
+      4.15,
+      12.5,
+      2.4
+     ],
+     "items": [
+      {
+       "type": "flow",
+       "size": 14,
+       "items": [
+        "日报跑起来",
+        "连续跑满一个季度",
+        "统计报贵 / 报便宜的代价",
+        {
+         "label": "结论写成月报模板",
+         "bold": true
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "text": "与交易员的日前申报逐日对照，统计报贵、报便宜各自的真实代价\n日报同时用于复盘：按日统计偏差来源",
+       "size": 15,
+       "color": "000000",
+       "bold": false,
+       "highlights": [
+        "真实代价"
+       ],
+       "bullet": true
+      }
+     ]
+    }
+   },
+   "takeaway": "三条线里最先能落地的是现场验证：先把日报跑起来，才知道区间宽窄到底值多少钱。",
+   "emphasis": [
+    "现场验证"
+   ],
+   "note": "注：后续工作为方案设想，尚未开展。"
+  }
+ ]
+}
