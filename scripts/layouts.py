@@ -40,7 +40,7 @@ LAYOUTS = {
     'case_setup': {'left': ([0.5, 1.5, 6.6, 5.06], 'gray'), 'right': ([7.3, 1.5, 5.7, 5.06], None)},
     'full': {'main': ([0.5, 1.5, 12.5, 5.06], None)},
 }
-FLEX = {'chart', 'figure', 'paper_figure', 'diagram', 'row', 'grid', 'stack'}   # stat / flow have natural heights
+FLEX = {'chart', 'figure', 'paper_figure', 'diagram', 'row', 'grid', 'stack', 'cards'}   # stat / flow have natural heights
 GAP = 0.12
 
 
@@ -124,7 +124,7 @@ def place_factory(slide, block):
                 place(child, cx, y, cw, child.get('h', h))
                 cx += cw + g
         elif kind == 'stack':
-            stack(item['items'], x, y, w, h, place, item.get('gap', GAP))
+            stack(item['items'], x, y, w, h, place, item.get('gap', GAP), item.get('valign', 'top'))
         elif kind == 'grid':
             cols = item.get('cols', 2)
             rows = math.ceil(len(item['items']) / cols)

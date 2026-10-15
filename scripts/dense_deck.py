@@ -1,6 +1,7 @@
 """Render content-rich academic pages from editable content blocks or slot layouts."""
 import argparse
 import json
+import re
 from pathlib import Path
 from lxml import etree
 from pptx import Presentation
@@ -299,11 +300,99 @@ def stat(slide, spec):
              INK, False, PP_ALIGN.CENTER)
 
 
+def shadow(item, blur=90000, dist=25400, direction=5400000, alpha=34000):
+    """给自选图形加一层柔和的外阴影（用户规则：并列关系用方框带阴影）。
+    PowerPoint 与 LibreOffice 都能渲染 a:outerShdw。"""
+    spPr = item._element.spPr
+    for old in spPr.findall(qn('a:effectLst')):
+        spPr.remove(old)
+    effects = OxmlElement('a:effectLst')
+    outer = OxmlElement('a:outerShdw')
+    outer.set('blurRad', str(blur))
+    outer.set('dist', str(dist))
+    outer.set('dir', str(direction))
+    outer.set('rotWithShape', '0')
+    color = OxmlElement('a:srgbClr')
+    color.set('val', '000000')
+    level = OxmlElement('a:alpha')
+    level.set('val', str(alpha))
+    color.append(level)
+    outer.append(color)
+    effects.append(outer)
+    spPr.append(effects)
+
+
+def centered_text(slide, title, body, x, y, w, h, spec, highlights=()):
+    """卡片里的文字：标题 + 正文都水平居中，整块在框内垂直居中。"""
+    frame = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h)).text_frame
+    frame.word_wrap = True
+    frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    frame.margin_left = frame.margin_right = frame.margin_top = frame.margin_bottom = Inches(0)
+    rows = [(title, spec.get('title_size', 16), BLUE, True, ()),
+            (body, spec.get('size', 15), INK, False, tuple(highlights))]
+    first = True
+    for value, size, color, bold, reds in rows:
+        if not value:
+            continue
+        terms = sorted(reds, key=len, reverse=True)
+        for line in value.split('\n'):
+            paragraph = frame.paragraphs[0] if first else frame.add_paragraph()
+            first = False
+            paragraph.alignment = PP_ALIGN.CENTER
+            paragraph.line_spacing = 1.28
+            paragraph.space_after = Pt(spec.get('space_after', 4))
+            parts = re.split('(' + '|'.join(re.escape(t) for t in terms) + ')', line) if terms else [line]
+            for part in parts:
+                if not part:
+                    continue
+                run = paragraph.add_run()
+                run.text = part
+                run.font.name = 'Arial'
+                run.font.size = Pt(size)
+                run.font.bold = bold or part in terms
+                run.font.color.rgb = RGBColor.from_string(RED if part in terms else color)
+                props = zh_run(run._r)
+                ea = OxmlElement('a:ea')
+                ea.set('typeface', '微软雅黑')
+                props.append(ea)
+
+
+def cards(slide, spec):
+    """并列卡片：浅蓝同色系圆角 + 柔和阴影，标题与正文都在框内居中（用户规则）。
+    items: [{title, body, highlights}]；direction right|down；fills 给一组同色系浅蓝（按顺序取）。"""
+    x, y, w, h = spec['box']
+    items = spec['items']
+    gap = spec.get('gap', 0.25)
+    down = spec.get('direction', 'right') == 'down'
+    count = len(items)
+    fills = spec.get('fills') or [spec.get('fill', 'E7F0FA')]
+    line = spec.get('line', 'B9CDE4')
+    for index, item in enumerate(items):
+        if down:
+            cw, ch = w, (h - gap * (count - 1)) / count
+            cx, cy = x, y + index * (ch + gap)
+        else:
+            cw, ch = (w - gap * (count - 1)) / count, h
+            cx, cy = x + index * (cw + gap), y
+        shape = box(slide, cx, cy, cw, ch, fills[index % len(fills)],
+                    MSO_SHAPE.ROUNDED_RECTANGLE, line=line)
+        try:
+            shape.adjustments[0] = spec.get('radius', 0.06)
+        except Exception:
+            pass
+        shadow(shape, alpha=spec.get('shadow_alpha', 32000))
+        pad = spec.get('pad', 0.18)
+        centered_text(slide, item.get('title', ''), item.get('body', ''),
+                      cx + pad, cy + pad * 0.6, cw - 2 * pad, ch - 1.2 * pad, spec, item.get('highlights', []))
+
+
 def panel(slide, spec):
     x, y, w, h = spec['box']
     box(slide, x, y, w, h, spec.get('fill', GRAY), line=spec.get('line'))
     if spec.get('title'):
-        text(slide, spec['title'], x+0.12, y+0.06, w-0.24, 0.4, spec.get('size', 16), BLUE, True)
+        # 分区小标题一律居中（用户规则：居中了才好看）
+        text(slide, spec['title'], x+0.12, y+0.06, w-0.24, 0.4, spec.get('size', 16), BLUE, True,
+             PP_ALIGN.CENTER)
 
 
 def block(slide, spec):
@@ -326,6 +415,8 @@ def block(slide, spec):
         flow(slide, spec)
     elif kind == 'stat':
         stat(slide, spec)
+    elif kind == 'cards':
+        cards(slide, spec)
     elif kind == 'formula':
         formula(slide, spec)
     elif kind == 'figure':
@@ -372,9 +463,10 @@ def build(content, output, base):
             for item in spec.get('blocks', []):
                 block(slide, item)
             if spec.get('takeaway'):
-                takeaway_y = 6.65 if spec.get('note') else 6.82
-                box(slide, 0.5, takeaway_y, 12.55, 0.35, ORANGE)
-                text(slide, spec['takeaway'], 0.65, takeaway_y+0.04, 12.2, 0.28, 14, INK, False,
+                # 页底结论条：比正文大一号（用户规则：全页最该被记住的一句）
+                takeaway_y = 6.60 if spec.get('note') else 6.78
+                box(slide, 0.5, takeaway_y, 12.55, 0.40, ORANGE)
+                text(slide, spec['takeaway'], 0.65, takeaway_y+0.03, 12.2, 0.34, 16, INK, False,
                      highlights=spec.get('emphasis', []))
             if spec.get('note'):
                 text(slide, spec['note'], 0.6, 7.02, 12.0, 0.21, 11, INK).name = '页脚注释'

@@ -62,6 +62,8 @@
 | `figure` | `file`、`fit`（contain / cover）、`caption`、`annotations`、`label`、`valign`（middle / top）、`prompt`、`aspect`。contain 时图位按图片比例收缩，细边框、图片、图注紧贴；不给 `file` 时生成预留图位；写了 `prompt` 时，生成脚本会把提示词存到输出目录的 `images/<label>.prompt.md`，并列出待生成清单 |
 | `flow` | `items`（文字，或 `{label, bold, color}`）、`direction`（right / down）、`style`（默认 `plain`：文字加蓝色箭头、无框；`box`：带框，只用于真正的多步流程，每页最多1个）、`arrows`、`size` |
 | `stat` | **不建议再用**（用户说“一个数字下面跟几个字很丑”）：关键数字写进正文句子里或表格里。字段仍在：`items[{value, label, emphasis}]`、`size`（默认26）、`h`（默认0.85）、`card`（默认 false） |
+| `stack` | `items`、`valign: "middle"`（整块垂直居中）、`gap` |
+| `cards` | **并列卡片**：白底圆角 + 柔和阴影，标题与正文都在框内居中。`items:[{title, body, highlights}]`、`direction`（right/down）、`gap`、`title_size`、`size`。弹性条目，放进 region 会自己吃满剩余高度；只放短内容 |
 | `paper_figure` | 论文原图：没有灰框，保持原比例。`crop: [左,上,右,下]` 是占原图的比例，PPT原生裁切，原图文件不受影响；`tag: "(a)"` 标子图号 |
 
 ## LaTeX 子集（`"latex": true`）
