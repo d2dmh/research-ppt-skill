@@ -30,11 +30,12 @@ NS = {
 }
 
 
-def embed(slide, video_path, picture_shape):
-    """把 picture_shape 变成内嵌视频的载体。"""
+def embed(slide, video_path, picture_shape, index=1):
+    """把 picture_shape 变成内嵌视频的载体。媒体部件名用 ASCII（video1.mp4）——
+    中文部件名在别的电脑/别的软件上可能解析失败，甚至被“修复”时丢掉。"""
     package = slide.part.package
     base = os.path.basename(video_path)
-    partname = PackURI('/ppt/media/' + base)
+    partname = PackURI('/ppt/media/video%d.mp4' % index)
     blob = open(video_path, 'rb').read()
     media_part = Part(partname, 'video/mp4', package, blob)
     r_video = slide.part.relate_to(media_part, RT.VIDEO)
@@ -74,7 +75,7 @@ def main():
     a = ap.parse_args()
 
     prs = Presentation(a.input)
-    for spec in a.spec:
+    for n, spec in enumerate(a.spec, 1):
         page, poster, video = spec.split(':', 2)
         slide = prs.slides[int(page) - 1]
         pics = [sh for sh in slide.shapes if sh.shape_type == 13]
@@ -83,7 +84,7 @@ def main():
         target = max(pics, key=lambda sh: Emu(sh.width).inches if sh.width else 0)
         if Emu(target.width).inches < 3:
             raise SystemExit('第 %s 页找不到大图（最大才 %.2f in）' % (page, Emu(target.width).inches))
-        name, size = embed(slide, video, target)
+        name, size = embed(slide, video, target, n)
         print('P%-3s 已嵌入视频 %-34s %5.1f MB（载体图 %.2f×%.2f in）'
               % (page, name, size / 1048576, Emu(target.width).inches, Emu(target.height).inches))
 
