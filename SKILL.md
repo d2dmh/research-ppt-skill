@@ -163,6 +163,12 @@ case_setup / review_table / framework5 / results_side / results_bottom / full）
   按每个部分第一页的位置把同一份目录 `deepcopy` 插进去、只改 `active`。自检：
 
   ```bash
+  # 注意：开源版已删掉 assets/reference.pptx（见文末说明）。本地没这个文件时，
+  # 下面这段和任何“渲染参考稿”的脚本都会直接报错——LibreOffice 报
+  # “Error: source file could not be loaded”或 CalledProcessError 非零退出，
+  # 这不是脚本坏了、也不是 LibreOffice 并发冲突，是文件不在。
+  # 要逐页复刻某份原稿，先按 references/reference-editing.md 把
+  # 参考稿放到 assets/reference.pptx，再读目录页。
   ~/.venvs/ppt/bin/python - <<'PY'
   from pptx import Presentation
   S = '~/.hermes/skills/productivity/research-ppt-skill/assets/reference.pptx'
@@ -256,6 +262,57 @@ python scripts/insert_image.py --input out/汇报.pptx --output out/汇报.pptx 
 - lint的错误必须修，警告逐条改写或调整。装了 `jieba` 时，lint能直接指出被换行拆开的词。然后逐页看渲染图，确认没有拆词、单字孤行、行首标点，公式不撞线，图例可读，图片和框贴合。改完重新生成，只重渲改动的页。
 - `render.py` 在Windows上用PowerPoint，其他系统用LibreOffice，后者字体是替代的，断行略有差异，而且含分式的公式只显示成一行线性文字。终稿以PowerPoint为准。
 - 脚本路径用本SKILL目录下的绝对路径。依赖：`python-pptx`、`python-docx`、`lxml`、`Pillow`，可选 `jieba`。
+
+## 写完先做「质感对照」，别自我感觉良好（实测教训）
+
+稿子发出去后用户最容易说的一句是“**感觉你新做的不如之前那两份**”。实测原因很单一：**新稿只用了 `text` + `table` + `flow` + 灰底，一张 `chart`、一个 `formula` 都没用**，而同源的旧稿几乎每页都有带坐标轴的图。同一个技能、同一套配色，缺的就是“重元素”。
+
+交付前强制自检（几分钟）：
+1. **数重元素**：这份稿子里 `chart` / `formula` / `table` / `figure` 各有几个。10 页级汇报至少 **原生图表 ≥ 3、公式 ≥ 1**；一页都不带图的稿子必然看着薄。
+2. **并排看联系表**：把新稿和手边已有稿子的 contact-sheet 拼成一张图同屏看，差距看得见；单独看自己的稿子看不出来。
+3. **逐页问“这页除了文字还有什么”**：答“只有文字和灰底”就补——原生柱状/折线图（趋势、对比）、公式块（模型定义）、表格（口径、对照）。
+
+**配图尺寸要用脚本量，不能凭感觉**（用户原话：“为什么你把配图放的这么小啊，你就不能按照 skill 的规则来吗”）。交付前跑一遍，把每张图的实际英寸、表格字号、图表坐标字号打出来：
+
+```python
+from pptx import Presentation
+from pptx.util import Emu
+p = Presentation('out/汇报.pptx')
+for i, s in enumerate(p.slides, 1):
+    pics = [(round(Emu(sh.width).inches,2), round(Emu(sh.height).inches,2))
+            for sh in s.shapes if sh.shape_type == 13]
+    tsz = sorted({r.font.size.pt for sh in s.shapes if sh.has_table
+                  for row in sh.table.rows for c in row.cells
+                  for para in c.text_frame.paragraphs for r in para.runs if r.font.size})
+    cax = []
+    for sh in s.shapes:
+        if sh.has_chart:
+            try: cax.append(sh.chart.category_axis.tick_labels.font.size.pt)
+            except Exception: pass
+    print(i, pics, '表格', tsz or '-', '图表', cax or '-')
+```
+
+判据：图片 `宽/高 ≈ 设计比例`（16:9 = 1.78）且**宽接近该栏可用宽度**；表格 ≥13pt；图表坐标 ≥12pt。
+实测违规与修正：16:9 配图塞进 5.8 in 半栏却只给 `h=2.1`（渲染出来很小，投影看不清）→ 按 `h ≈ 区宽 × 9/16` 重给，渲染为 **4.76×2.68 in**；同一份稿的预览图从 1.05 in 改到 **5.00×2.61 in**。图不够大时先抢高度：减正文、把表格移走（表格可以并进相邻页的正文），或换页版式给图让位——**永远不要靠缩图来腾地方**。
+
+填空白可用（优先序）：正文要点 → 表格 → 小图表 → 公式 → `flow`。
+**不能用**：`stat` 大数字块（用户原话“一个数字下面再跟几个字就很丑”）；GPT 图不能当结果证据。
+
+图表里的数字不是真实结果时，图题或注释写“**示意数据**”——不是免责声明，是让观众看懂“这是版式演示”。
+
+## 录屏位怎么落地：**真内嵌视频**（不是截图、也不是链接）
+
+用户看到你放的“封面帧 + 超链接”后原话是：“**你放的是截屏不是视频啊**”。所以录屏页的成稿标准是**把 mp4 嵌进 pptx**，点击封面就能在放映中播。
+
+做法（与 PowerPoint 自己写出的结构一致，脚本：`embed_video.py`）：
+1. 先正常把**封面图当普通 `figure` 填进图位**（`add_picture`）：它就是静帧，也是媒体对象的载体；封面自己叠播放三角 + 深蓝条（写案例名与时长）。
+2. 视频作为**媒体部件**放进 `ppt/media/`，同一点上挂两条关系：`relationships/video` 与 `relationships/media`（`RT.VIDEO` / `RT.MEDIA`）。
+3. 在该 `p:pic` 里注入：`p:nvPr` 最前放 `<a:videoFile r:link="rIdVideo"/>`，最后放 `<p:extLst><p:ext uri="{DAA4B4D4-6D71-4841-9C94-04AC343B8D0A}"><p14:media r:embed="rIdMedia"/></p:ext></p:extLst>`；`p:cNvPr` 里加 `<a:hlinkClick r:id="" action="ppaction://media"/>`（点击播放）。
+4. **一个 `p:cNvPr` 里只能有一个 `hlinkClick`**。如果之前给图挂过文件超链接，必须先删后再插，否则 PowerPoint 会报“需要修复”。同理**只给宽度 > 3 in 的大图挂**——页眉校徽也是图片形状。
+5. 保存后自检：`[Content_Types].xml` 有 `Extension="mp4"`；包内 `ppt/media/*.mp4` 存在；对应 slide 的 rels 含 `relationships/video`；slide XML 里 `videoFile` 与 `p14:media` 都在。
+6. 验收：用 WPS/PowerPoint 打开看**是否报修复**——没报修复、且选中封面时出现“视频工具/播放”控件（WPS 会显示进度条）就是成了。LibreOffice 只当静帧渲染，不能拿它判定视频是否嵌好。
+
+> 兼容性：内嵌视频会把 pptx 变大（本案 17.8 MB → 24.8 MB，两条片子共 6.8 MB）。动画/配音靠 PowerPoint/WPS 播放，导出 PDF 只有封面。
 
 ## 交付检查
 
