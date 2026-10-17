@@ -39,19 +39,32 @@ LAYOUTS = {
     # ref p18 – object/topology + parameters and experiment conditions
     'case_setup': {'left': ([0.5, 1.5, 6.6, 5.06], 'gray'), 'right': ([7.3, 1.5, 5.7, 5.06], None)},
     'full': {'main': ([0.5, 1.5, 12.5, 5.06], None)},
+    # 用户稿《智能体、Skill 与 MCP》的主力页型（25 页里 10 页）：
+    # 左侧 16:9 大图 + 一句图注，右侧窄栏“看这张图看什么”3–4 条，侧栏灰底按内容收高
+    'figure_side': {'main': ([0.8, 1.5, 8.05, 5.1], None), 'side': ([9.3, 1.5, 3.7, 5.1], 'gray')},
+    # 录屏 / 截图页：素材占主体，侧栏写“看什么”
+    'video_side': {'main': ([0.5, 1.5, 8.6, 5.2], None), 'side': ([9.3, 1.5, 3.7, 5.1], 'gray')},   # 不写图注时素材 8.6×4.85
+    # 文字在左、图在右（介绍对象 / 工具时用）
+    'figure_right': {'left': ([0.5, 1.5, 6.0, 5.06], 'gray'), 'right': ([6.7, 1.5, 6.3, 5.06], None)},
 }
-FLEX = {'chart', 'figure', 'paper_figure', 'diagram', 'row', 'grid', 'stack', 'cards'}   # stat / flow have natural heights
+FLEX = {'chart', 'figure', 'paper_figure', 'diagram', 'row', 'grid', 'stack', 'cards', 'stages', 'timeline', 'rows', 'side_tag', 'layers', 'steps_v', 'quadrant'}   # stat / flow have natural heights
 GAP = 0.12
+
+
+CURRENT_PAGE = ''   # 生成日志里标出是哪一页、哪个分区
+CURRENT_REGION = ''
 
 
 def natural_height(item, width):
     """Height for content-sized items; None for flexible ones."""
     if 'h' in item:
         return item['h']
+    if item.get('grow'):
+        return None
     kind = item['type']
     if kind == 'text':
         return measure(item['text'], item.get('size', 16), width, item.get('bold', False),
-                       item.get('bullet', False), item.get('spacing'))[1]
+                       item.get('bullet', False), item.get('spacing'), item.get('sub', False))[1]
     if kind == 'formula':
         return len(item['lines']) * item.get('size', 18) * 1.9 / 72 + 0.08
     if kind == 'table':
@@ -64,8 +77,13 @@ def natural_height(item, width):
                         for v, wt in zip(row, weights))
             total += lines * size * 1.25 / 72 + 0.13
         return total
+    from info_style import NATURAL
+    if kind in NATURAL:
+        return NATURAL[kind](item, width)
     if kind == 'stat':
-        return item.get('h', 0.85)
+        raise ValueError('stat 数字块已停用：把关键数字写进正文句子或表格')
+    if kind == 'transition':
+        return item.get('h', 0.75)
     if kind == 'flow':
         n = len(item['items'])
         size = item.get('size', 15)
@@ -87,25 +105,33 @@ def stack(items, x, y, w, h, place, gap=GAP, valign='top', label=''):
     used = sum(v for v in fixed if v is not None) + gap * (len(items) - 1)
     spare = h - used
     if spare < -0.05:
-        print(f'  ! {label} over-full by {-spare:.2f} in: split the page or trim content')
+        print(f'  ! [{CURRENT_PAGE} 分区 {CURRENT_REGION}] {label or "内部组合"} 超出 {-spare:.2f} in（over-full）：删减内容、换更大的格子或拆页')
     weights = sum(items[i].get('weight', 1) for i in flexible)
     cursor = y
     free = 0.0 if flexible else max(spare, 0.0)
+    # spread 但只有一个多行文本：条目间没有可分的空隙，改为加大行距撑满（上限 2.2 倍）
+    if free and valign == 'spread' and len(items) == 1 and items[0]['type'] == 'text' and '\n' in items[0]['text']:
+        item = items[0]
+        base = item.get('spacing') or (1.3 if (item.get('bullet') or item.get('sub')) else 1.18)
+        target = min(2.2, base * h / max(fixed[0], 0.1))
+        items = [dict(item, spacing=target, h=h)]
+        fixed = [h]
+        free = max(0.0, h - natural_height(dict(item, spacing=target), w))
     if free and valign == 'middle':
         cursor += free / 2
     elif free and valign == 'spread' and len(items) > 1:
         gap += min(free / (len(items) - 1), 0.45)
         free = max(0.0, h - (used - GAP * (len(items) - 1)) - gap * (len(items) - 1))
-    if free > max(0.6, 0.25 * h):
-        print(f'  · {label} has {free:.2f} in empty below its content ({free / h:.0%}); '
-              f'add a figure (de-AI-styled GPT image or reference figure), a small chart or a formula, or shrink/merge the region')
+    if label is not None and free > max(0.6, 0.25 * h):
+        print(f'  · [{CURRENT_PAGE}] {label} 内容下方空了 {free:.2f} in（{free / h:.0%}，has empty）；'
+              f'先放大图，再补具体的图 / 小标题要点 / 表格，或收窄分区')
     minimum = {'chart': 1.5, 'figure': 1.2, 'paper_figure': 1.2, 'diagram': 1.0, 'grid': 1.5}
     for item, height in zip(items, fixed):
         if height is None:
             height = max(spare, 0.4) * item.get('weight', 1) / weights if weights else 0.4
             if height < minimum.get(item['type'], 0) - 0.01:
-                print(f"  ! {label}: {item['type']} only gets {height:.2f} in (< {minimum[item['type']]} in) — "
-                      f"too small to read; move it to a larger region, drop text, or use stat cards instead")
+                print(f"  ! [{CURRENT_PAGE} 分区 {CURRENT_REGION}] {item['type']} 只分到 {height:.2f} in 高（< {minimum[item['type']]} in），太小看不清——"
+                      f"挪到更大的格子或删掉同格文字")
         place(item, x, cursor, w, height)
         cursor += height + gap
     return free
@@ -135,7 +161,8 @@ def place_factory(slide, block):
                 place(child, x + (n % cols) * (cw + g), y + (n // cols) * (ch + g), cw, ch)
         else:
             spec = dict(item)
-            if kind in ('figure', 'paper_figure') and spec.get('caption', spec.get('label', '')) != '':
+            if kind in ('figure', 'paper_figure') and spec.get('caption', '') != '' \
+                    and not spec.get('caption_style'):
                 h = h - 0.58          # figure() draws its caption below the box
             spec['box'] = [x, y, w, h]
             block(slide, spec)
@@ -153,14 +180,23 @@ def render_regions(slide, spec, block, panel):
         default_box, default_fill = layout.get(slot, (None, 'gray'))   # extra slots default to the unified gray
         x, y, w, h = region.get('box', default_box)
         fill = region.get('fill', default_fill)
-        fill = FILLS.get(fill, fill) if fill not in (None, 'none') else None
+        style = region.get('title_style', 'plain')
         title = region.get('title', '')
+        # fit: 灰底按内容收高，不留半截空灰底（figure_side / video_side 的侧栏默认开启）
+        if region.get('fit', spec['layout'] in ('figure_side', 'video_side') and slot == 'side'):
+            pad_ = region.get('pad', 0.2)
+            heights = [natural_height(it, w - 2 * pad_) for it in region.get('items', [])]
+            if heights and None not in heights:
+                top_ = (0.62 if style in ('band', 'tab') else 0.55) if title else 0.18
+                need = top_ + sum(heights) + region.get('gap', GAP) * (len(heights) - 1) + 0.3
+                h = min(h, max(need, 1.2))
+        fill = FILLS.get(fill, fill) if fill not in (None, 'none') else None
         if fill or title:
             panel(slide, {'type': 'panel', 'title': title, 'box': [x, y, w, h], 'fill': fill or 'FFFFFF',
-                          'size': region.get('title_size', 17)})
+                          'size': region.get('title_size', 17), 'title_style': region.get('title_style', 'plain')})
         boxed = bool(fill or title)
         pad = region.get('pad', 0.2 if boxed else 0.0)
-        top = 0.55 if title else (0.18 if boxed else 0.0)
+        top = (0.62 if style in ('band', 'tab') else 0.55) if title else (0.18 if boxed else 0.0)
         bottom = 0.15 if boxed else 0.0
         stack(region.get('items', []), x + pad, y + top, w - 2 * pad, h - top - bottom, place,
               region.get('gap', GAP), region.get('valign', 'top'), f"region '{slot}'")

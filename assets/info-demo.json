@@ -1,0 +1,2698 @@
+{
+ "title": "园区综合能源系统负荷预测与优化调度（info 版式示例）",
+ "meta": {
+  "style": "info",
+  "brand": "xmu"
+ },
+ "slides": [
+  {
+   "type": "cover",
+   "title": "园区综合能源系统负荷预测与优化调度",
+   "subtitle": "蓝白信息图式科研汇报版式示例",
+   "info": [
+    "汇报人：示例",
+    "指导教师：示例",
+    "2026 年 10 月"
+   ]
+  },
+  {
+   "type": "agenda",
+   "items": [
+    "研究背景与问题",
+    "方法与技术路线",
+    "结果与应用",
+    "计划与结论"
+   ],
+   "active": 0
+  },
+  {
+   "style": "info",
+   "title": "1.1 研究背景与核心需求",
+   "layout": "info_mosaic",
+   "lead": {
+    "text": "高比例光伏接入后，园区负荷与出力双侧波动，日前计划与实际运行的偏差成为调度的主要成本来源",
+    "highlights": [
+     "日前计划与实际运行的偏差"
+    ]
+   },
+   "band": "核心需求：把“预测不准”转化为可量化、可补偿的调度不确定性",
+   "regions": {
+    "left": {
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/p21.jpg",
+       "label": "p21",
+       "caption": "",
+       "prompt": "园区多目标预测与自适应更新流程：左侧多源数据输入（历史运行、气象、市场），中间日前与日内预测，右侧预测值与区间；下方实际反馈驱动模型校正与重训。16:9。",
+       "weight": 1.6
+      },
+      {
+       "type": "pill",
+       "text": "研究对象：园区电—热—冷多能系统",
+       "light": true,
+       "full": true
+      },
+      {
+       "type": "pill",
+       "text": "关键问题识别与研究目标",
+       "full": true
+      },
+      {
+       "type": "hexes",
+       "items": [
+        "负荷\n预测",
+        "出力\n预测",
+        "不确定\n刻画",
+        "协同\n调度"
+       ]
+      }
+     ],
+     "gap": 0.08
+    },
+    "top": {
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "stack",
+         "items": [
+          {
+           "type": "note",
+           "text": "多能负荷耦合\n峰谷时段相互错开"
+          },
+          {
+           "type": "note",
+           "text": "光伏日内波动\n午间出力集中"
+          }
+         ],
+         "valign": "spread"
+        },
+        {
+         "type": "arrow"
+        },
+        {
+         "type": "figure",
+         "file": "images/load.png",
+         "label": "load",
+         "caption": ""
+        }
+       ],
+       "widths": [
+        3.3,
+        0.6,
+        4.6
+       ]
+      }
+     ]
+    },
+    "bottom": {
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "stack",
+         "items": [
+          {
+           "type": "figure",
+           "file": "images/pv_price.png",
+           "label": "pv_price",
+           "caption": ""
+          },
+          {
+           "type": "para",
+           "text": "出力高峰与电价高峰错位",
+           "color": "red"
+          }
+         ],
+         "gap": 0.04
+        },
+        {
+         "type": "markers",
+         "items": [
+          {
+           "label": "预测侧",
+           "text": "15 min 级滚动预测"
+          },
+          {
+           "label": "调度侧",
+           "text": "日前计划 + 日内修正"
+          },
+          {
+           "label": "评价侧",
+           "text": "成本、碳排、弃光率"
+          }
+         ],
+         "fill": "light"
+        }
+       ],
+       "widths": [
+        4.3,
+        4.2
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "研究重点：围绕预测偏差，建立“预测—不确定性—调度”一体化的方法链",
+    "highlights": [
+     "“预测—不确定性—调度”一体化"
+    ]
+   },
+   "page_type": "P01"
+  },
+  {
+   "style": "info",
+   "title": "1.2 现有方法的两个瓶颈",
+   "layout": "info_split",
+   "lead": {
+    "text": "瓶颈集中在“预测只给点值”和“调度不认误差”两个环节，导致计划保守、备用冗余",
+    "highlights": [
+     "“预测只给点值”",
+     "“调度不认误差”"
+    ]
+   },
+   "regions": {
+    "left": {
+     "band": "瓶颈一：预测只给点值，没有可信区间",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/forecast.png",
+       "label": "forecast",
+       "caption": "",
+       "weight": 1.5
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "side_tag",
+         "text": "现状"
+        },
+        {
+         "type": "note",
+         "text": "点预测在早晚高峰误差放大\n极端天气下 MAPE 超过 8%"
+        }
+       ],
+       "widths": [
+        0.5,
+        5.2
+       ],
+       "h": 1.0
+      }
+     ]
+    },
+    "right": {
+     "band": "瓶颈二：调度按确定值排程，误差靠备用兜底",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/dispatch.png",
+       "label": "dispatch",
+       "caption": "",
+       "weight": 1.5
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "note",
+         "text": "用预测区间约束调度\n备用容量按风险分配",
+         "highlights": [
+          "按风险分配"
+         ]
+        },
+        {
+         "type": "side_tag",
+         "text": "目标"
+        }
+       ],
+       "widths": [
+        5.2,
+        0.5
+       ],
+       "h": 1.0
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "把预测的不确定性显式传给调度，是同时降低成本与风险的关键",
+    "highlights": [
+     "显式传给调度"
+    ]
+   },
+   "page_type": "P02"
+  },
+  {
+   "style": "info",
+   "title": "1.3 研究问题",
+   "layout": "info_split",
+   "lead": {
+    "text": "负荷的时空异质性决定了预测误差的结构，误差结构又决定了调度需要预留多少备用",
+    "highlights": [
+     "误差的结构"
+    ]
+   },
+   "sublead": {
+    "text": "通过“数据刻画—模型解析—调度验证”的递进思路，揭示预测误差的来源与传导规律"
+   },
+   "regions": {
+    "left": {
+     "grid": [
+      0,
+      11,
+      0,
+      12
+     ],
+     "items": [
+      {
+       "type": "para",
+       "text": "现有研究对多能耦合、极端工况、误差传导刻画不足",
+       "strong": [
+        "多能耦合",
+        "极端工况",
+        "误差传导"
+       ]
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/heatmap.png",
+         "label": "heatmap",
+         "caption": ""
+        },
+        {
+         "type": "figure",
+         "file": "images/corr.png",
+         "label": "corr",
+         "caption": ""
+        }
+       ],
+       "widths": [
+        1.35,
+        1
+       ]
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "note",
+         "text": "时空异质性如何进入模型",
+         "title": "问题一"
+        },
+        {
+         "type": "note",
+         "text": "误差如何传导到调度成本",
+         "title": "问题二"
+        }
+       ],
+       "h": 0.95
+      }
+     ]
+    },
+    "tr": {
+     "grid": [
+      11,
+      13,
+      0,
+      5
+     ],
+     "side": "数据基础",
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/clean.png",
+         "label": "clean",
+         "caption": ""
+        },
+        {
+         "type": "figure",
+         "file": "images/scatter.png",
+         "label": "scatter",
+         "caption": ""
+        }
+       ],
+       "widths": [
+        1.6,
+        1
+       ]
+      }
+     ]
+    },
+    "br": {
+     "grid": [
+      11,
+      13,
+      5,
+      7
+     ],
+     "side": "研究思路",
+     "fill": "dashed",
+     "items": [
+      {
+       "type": "label_rows",
+       "items": [
+        {
+         "label": "现存\n问题",
+         "text": "误差按全天平均处理，忽略时段与工况差异，备用配置偏保守"
+        },
+        {
+         "label": "研究\n思路",
+         "text": "按时段与工况分解误差结构，把区间预测接入调度",
+         "highlights": [
+          "区间预测接入调度"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "核心问题：误差有结构，调度就应当按结构配置备用",
+    "highlights": [
+     "按结构配置备用"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "1.4 研究目标",
+   "layout": "info_split",
+   "lead": {
+    "text": "面向园区“双碳”运行需求，聚焦预测不确定性的刻画与利用，以“降成本、控风险、可推广”为导向",
+    "highlights": [
+     "“降成本、控风险、可推广”"
+    ]
+   },
+   "sublead": {
+    "text": "破解多能耦合负荷在极端工况下预测失准、调度失稳的难题"
+   },
+   "regions": {
+    "left": {
+     "grid": [
+      0,
+      10,
+      0,
+      12
+     ],
+     "head": "误差结构的刻画与起源机制",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/p22.jpg",
+       "label": "p22",
+       "caption": "",
+       "prompt": "电价预测六阶段链路：基础价格模型、事件识别、二阶动力学、条件幅度、事件状态库、联合输出，各阶段配小曲线图。16:9。",
+       "weight": 1.5
+      },
+      {
+       "type": "links",
+       "items": [
+        [
+         "突破区间预测瓶颈",
+         "可信可校"
+        ],
+        [
+         "攻克调度转化痛点",
+         "风险可控"
+        ]
+       ]
+      }
+     ]
+    },
+    "rt": {
+     "grid": [
+      10,
+      14,
+      0,
+      4
+     ],
+     "fill": "none",
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "para",
+         "text": "明确全时段\n多工况误差\n的关键表征维度",
+         "color": "navy"
+        },
+        {
+         "type": "chevrons",
+         "tone": "navy",
+         "size": 13.2,
+         "items": [
+          {
+           "title": "厘清负荷与气象的耦合机制",
+           "text": "定位极端天气下误差放大的关键时段"
+          },
+          {
+           "title": "构建“预测—区间—调度”跨环节模型",
+           "highlights": [
+            "“预测—区间—调度”"
+           ]
+          }
+         ]
+        }
+       ],
+       "widths": [
+        1,
+        2.5
+       ]
+      }
+     ]
+    },
+    "rm": {
+     "grid": [
+      10,
+      14,
+      4,
+      2
+     ],
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "process",
+       "items": [
+        "多源数据支撑",
+        "区间预测模型",
+        "两阶段调度验证"
+       ]
+      }
+     ]
+    },
+    "rb": {
+     "grid": [
+      10,
+      14,
+      6,
+      6
+     ],
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/pareto.png",
+         "label": "pareto",
+         "caption": ""
+        },
+        {
+         "type": "chevrons",
+         "tone": "navy",
+         "items": [
+          {
+           "title": "解决多时间尺度协同",
+           "text": "日前计划与日内 15 min 修正衔接"
+          },
+          {
+           "title": "解决多目标取舍",
+           "text": "成本与碳排给出帕累托前沿，按场景选折中方案"
+          }
+         ]
+        }
+       ],
+       "widths": [
+        1.1,
+        1
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "目标：让预测给出“可信区间”，让调度“按区间”排程",
+    "highlights": [
+     "“可信区间”",
+     "“按区间”"
+    ]
+   }
+  },
+  {
+   "type": "agenda",
+   "items": [
+    "研究背景与问题",
+    "方法与技术路线",
+    "结果与应用",
+    "计划与结论"
+   ],
+   "active": 1
+  },
+  {
+   "style": "info",
+   "title": "2.1 两种预测方案对比",
+   "layout": "info_split_strip",
+   "lead": {
+    "text": "对比点预测与区间预测两种方案的思路、优点与局限，说明各自的适用条件与选择依据",
+    "highlights": [
+     "适用条件"
+    ]
+   },
+   "regions": {
+    "left": {
+     "band": "方案 A：点预测（LSTM）",
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "section",
+         "head": "方法思路",
+         "items": [
+          "历史负荷 + 气象输入",
+          "输出单一预测值",
+          "误差按全天平均估计"
+         ]
+        },
+        {
+         "type": "figure",
+         "file": "@/components/curve-a.png",
+         "label": "curve-a",
+         "caption": ""
+        }
+       ],
+       "widths": [
+        1,
+        1.15
+       ]
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "section",
+         "head": "优点",
+         "items": [
+          "结构简单，训练快",
+          "便于建立比较基线"
+         ]
+        },
+        {
+         "type": "section",
+         "head": "局限",
+         "items": [
+          "不给出误差范围",
+          "极端工况误差放大"
+         ]
+        }
+       ]
+      }
+     ],
+     "valign": "spread"
+    },
+    "right": {
+     "band": "方案 B：区间预测（本文）",
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "section",
+         "head": "方法思路",
+         "items": [
+          "分位数回归输出区间",
+          "按时段校准覆盖率",
+          "区间直接接入调度"
+         ]
+        },
+        {
+         "type": "figure",
+         "file": "@/components/curve-b.png",
+         "label": "curve-b",
+         "caption": ""
+        }
+       ],
+       "widths": [
+        1,
+        1.15
+       ]
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "section",
+         "head": "优点",
+         "items": [
+          "给出可信预测区间",
+          "误差结构可解释"
+         ]
+        },
+        {
+         "type": "section",
+         "head": "局限",
+         "items": [
+          "训练数据需求更大",
+          "计算成本较高"
+         ]
+        }
+       ]
+      }
+     ],
+     "valign": "spread"
+    },
+    "bottom": {
+     "side": "适用场景\n与选择建议",
+     "side_w": 1.9,
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "markers",
+         "items": [
+          {
+           "label": "方案 A",
+           "text": "数据有限、只需粗略计划"
+          },
+          {
+           "label": "方案 B",
+           "text": "高比例光伏、需要备用优化"
+          }
+         ]
+        },
+        {
+         "type": "process",
+         "gradient": true,
+         "items": [
+          "明确目标",
+          "比较评估",
+          "选择应用"
+         ]
+        }
+       ],
+       "widths": [
+        1.25,
+        1
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "选择依据：调度对风险敏感时，用区间预测替代点预测",
+    "highlights": [
+     "用区间预测替代点预测"
+    ]
+   },
+   "page_type": "P03"
+  },
+  {
+   "style": "info",
+   "title": "2.2 研究流程与关键步骤",
+   "layout": "info_full",
+   "lead": {
+    "text": "用明确的输入、处理步骤与输出，说明研究如何从原始数据走到可执行的调度方案",
+    "highlights": [
+     "可执行的调度方案"
+    ]
+   },
+   "band": "研究流程：四个阶段的有序推进",
+   "regions": {
+    "main": {
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "stages",
+       "head_style": "light",
+       "items": [
+        {
+         "title": "阶段一：数据准备",
+         "figure": {
+          "type": "figure",
+          "file": "images/clean.png",
+          "label": "clean",
+          "caption": ""
+         },
+         "items": [
+          "多源数据采集与对齐",
+          "缺失识别与补全",
+          "训练 / 验证集划分"
+         ],
+         "output": "输出：高质量数据集"
+        },
+        {
+         "title": "阶段二：特征提取",
+         "figure": {
+          "type": "figure",
+          "file": "images/corr.png",
+          "label": "corr",
+          "caption": ""
+         },
+         "items": [
+          "气象与日历特征构建",
+          "相关性筛选与降维",
+          "特征标准化"
+         ],
+         "output": "输出：有效特征表示"
+        },
+        {
+         "title": "阶段三：模型分析",
+         "figure": {
+          "type": "figure",
+          "file": "images/loss.png",
+          "label": "loss",
+          "caption": ""
+         },
+         "items": [
+          "分位数回归网络",
+          "超参数训练与优化",
+          "对比实验与消融"
+         ],
+         "output": "输出：区间预测模型"
+        },
+        {
+         "title": "阶段四：调度验证",
+         "figure": {
+          "type": "figure",
+          "file": "images/dispatch.png",
+          "label": "dispatch",
+          "caption": ""
+         },
+         "items": [
+          "两阶段鲁棒调度",
+          "成本与风险评估",
+          "典型日案例分析"
+         ],
+         "output": "输出：验证结论与方案"
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "结论：通过标准化流程，实现数据→特征→模型→调度的有序推进",
+    "highlights": [
+     "数据→特征→模型→调度"
+    ]
+   },
+   "page_type": "P05"
+  },
+  {
+   "style": "info",
+   "title": "2.3 总体技术路线",
+   "layout": "info_full",
+   "lead": {
+    "text": "以研究目标为导向，构建分层递进的技术路线，把数据、方法与验证有机结合",
+    "highlights": [
+     "分层递进"
+    ]
+   },
+   "band": "技术路线：从数据到调度验证的系统化框架",
+   "regions": {
+    "main": {
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "matrix",
+       "label_style": "light",
+       "arrows": "down",
+       "label_w": 1.9,
+       "notes_w": 3.0,
+       "gap_x": 0.18,
+       "row_frame": true,
+       "rows": [
+        {
+         "label": "数据层",
+         "sub": "（获取与处理）",
+         "cells": [
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/heatmap.png",
+            "label": "heatmap",
+            "caption": ""
+           },
+           "caption": "负荷时空分布"
+          },
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/clean.png",
+            "label": "clean",
+            "caption": ""
+           },
+           "caption": "缺失补全"
+          },
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/corr.png",
+            "label": "corr",
+            "caption": ""
+           },
+           "caption": "特征筛选"
+          }
+         ],
+         "notes": [
+          "多源数据获取与对齐",
+          "数据清洗与质量控制",
+          "构建标准化数据集"
+         ]
+        },
+        {
+         "label": "方法层",
+         "sub": "（模型与算法）",
+         "cells": [
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/forecast.png",
+            "label": "forecast",
+            "caption": ""
+           },
+           "caption": "区间预测"
+          },
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/loss.png",
+            "label": "loss",
+            "caption": ""
+           },
+           "caption": "模型训练"
+          },
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/mape.png",
+            "label": "mape",
+            "caption": ""
+           },
+           "caption": "对比分析"
+          }
+         ],
+         "notes": [
+          "分位数回归区间预测",
+          "覆盖率按时段校准",
+          "与 4 类基准模型对比"
+         ]
+        },
+        {
+         "label": "验证层",
+         "sub": "（调度与应用）",
+         "cells": [
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/dispatch.png",
+            "label": "dispatch",
+            "caption": ""
+           },
+           "caption": "日前调度"
+          },
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/soc.png",
+            "label": "soc",
+            "caption": ""
+           },
+           "caption": "储能运行"
+          },
+          {
+           "figure": {
+            "type": "figure",
+            "file": "images/pareto.png",
+            "label": "pareto",
+            "caption": ""
+           },
+           "caption": "多目标权衡"
+          }
+         ],
+         "notes": [
+          "两阶段鲁棒调度",
+          "多工况稳健性检验",
+          "典型园区案例验证"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "构建“数据层—方法层—验证层”的技术路线，确保目标可实现、过程可控制、结果可验证",
+    "highlights": [
+     "“数据层—方法层—验证层”"
+    ]
+   },
+   "page_type": "P06"
+  },
+  {
+   "style": "info",
+   "title": "2.4 两种调度策略的对比与选择",
+   "layout": "info_full",
+   "lead": {
+    "text": "在相同园区、相同预测输入下，从五个维度比较确定性调度与鲁棒调度，并说明选择理由",
+    "highlights": [
+     "五个维度"
+    ]
+   },
+   "band": {
+    "text": "对比矩阵：在同一条件下评价调度策略",
+    "images": [
+     "images/dispatch.png",
+     "images/pv_price.png",
+     "images/soc.png",
+     "images/load.png"
+    ]
+   },
+   "regions": {
+    "figs": {
+     "grid": [
+      0,
+      24,
+      7,
+      5
+     ],
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/forecast.png",
+         "label": "forecast",
+         "caption": "同一预测输入",
+         "caption_style": "box"
+        },
+        {
+         "type": "figure",
+         "file": "images/dispatch.png",
+         "label": "dispatch",
+         "caption": "策略 B 日前计划",
+         "caption_style": "box"
+        },
+        {
+         "type": "figure",
+         "file": "images/soc.png",
+         "label": "soc",
+         "caption": "储能吸纳午间光伏",
+         "caption_style": "box"
+        },
+        {
+         "type": "figure",
+         "file": "images/robust.png",
+         "label": "robust",
+         "caption": "多工况误差分布",
+         "caption_style": "box"
+        }
+       ]
+      }
+     ]
+    },
+    "main": {
+     "grid": [
+      0,
+      24,
+      0,
+      7
+     ],
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "table",
+       "widths": [
+        1.3,
+        2.2,
+        3.4,
+        3.4
+       ],
+       "columns": [
+        "评价维度",
+        "核心关注",
+        "策略 A：确定性调度",
+        "策略 B：区间鲁棒调度（本文）"
+       ],
+       "rows": [
+        [
+         "经济性",
+         "日运行成本",
+         "计划成本低，但偏差惩罚高",
+         "总成本降低 12.4%"
+        ],
+        [
+         "可靠性",
+         "功率缺额风险",
+         "依赖固定 10% 备用",
+         "备用按时段风险分配，缺额概率 < 1%"
+        ],
+        [
+         "低碳性",
+         "碳排放与弃光",
+         "午间弃光明显",
+         "储能吸纳午间光伏，弃光率降低 59%"
+        ],
+        [
+         "计算效率",
+         "求解时间",
+         "约 20 s",
+         "约 90 s，满足日前计划要求"
+        ],
+        [
+         "适用条件",
+         "场景要求",
+         "负荷平稳、光伏占比低",
+         "高比例光伏、负荷波动大"
+        ]
+       ],
+       "highlights": [
+        "12.4%",
+        "< 1%",
+        "59%"
+       ],
+       "highlight_rows": [
+        2
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "结论：在高比例光伏园区，建议采用区间鲁棒调度，依据是可靠性指标的显著提升",
+    "highlights": [
+     "建议采用区间鲁棒调度"
+    ]
+   },
+   "page_type": "P10"
+  },
+  {
+   "style": "info",
+   "title": "2.5 平台分层架构与模块关系",
+   "layout": "info_full",
+   "lead": {
+    "text": "采用分层设计的平台架构，明确各层功能与模块关系，构建协同高效的预测调度体系",
+    "highlights": [
+     "协同高效"
+    ]
+   },
+   "band": "系统总体架构：分层设计、模块协同、支撑应用",
+   "regions": {
+    "main": {
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "matrix",
+       "arrows": "up",
+       "label_w": 1.8,
+       "rows": [
+        {
+         "label": "应用层",
+         "sub": "（场景与价值）",
+         "cells": [
+          {
+           "title": "日前调度",
+           "text": "（示例：次日计划）"
+          },
+          {
+           "title": "运行监控",
+           "text": "（示例：偏差预警）"
+          },
+          {
+           "title": "效益评估",
+           "text": "（示例：碳排看板）"
+          }
+         ]
+        },
+        {
+         "label": "服务层",
+         "sub": "（能力与接口）",
+         "cells": [
+          {
+           "title": "数据服务",
+           "text": "（查询 / 订阅）"
+          },
+          {
+           "title": "模型服务",
+           "text": "（部署 / 调用）"
+          },
+          {
+           "title": "优化服务",
+           "text": "（求解 / 回放）"
+          }
+         ]
+        },
+        {
+         "label": "方法层",
+         "sub": "（算法与模型）",
+         "cells": [
+          {
+           "title": "数据清洗",
+           "text": "（补全 / 对齐）"
+          },
+          {
+           "title": "区间预测",
+           "text": "（分位数回归）"
+          },
+          {
+           "title": "鲁棒调度",
+           "text": "（两阶段优化）"
+          }
+         ]
+        },
+        {
+         "label": "数据层",
+         "sub": "（数据与资源）",
+         "cells": [
+          {
+           "title": "运行数据",
+           "text": "（SCADA / 电表）"
+          },
+          {
+           "title": "气象数据",
+           "text": "（预报 / 实测）"
+          },
+          {
+           "title": "市场数据",
+           "text": "（电价 / 碳价）"
+          }
+         ]
+        }
+       ],
+       "side": {
+        "title": "支撑保障",
+        "items": [
+         {
+          "text": "标准规范",
+          "sub": "数据 / 接口 / 评价"
+         },
+         {
+          "text": "运行管理",
+          "sub": "部署 / 监控 / 运维"
+         },
+         {
+          "text": "安全隐私",
+          "sub": "权限 / 加密 / 合规"
+         },
+         {
+          "text": "计算平台",
+          "sub": "计算 / 存储 / 工具"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "形成“数据—方法—服务—应用”的分层架构，箭头只表示真实的数据依赖",
+    "highlights": [
+     "“数据—方法—服务—应用”"
+    ]
+   },
+   "page_type": "P07"
+  },
+  {
+   "style": "info",
+   "title": "2.6 四个环节的循环关系",
+   "layout": "info_hub",
+   "lead": {
+    "text": "数据、模型、调度与评估四个环节相互促进，构成“越用越准”的持续优化闭环",
+    "highlights": [
+     "“越用越准”"
+    ]
+   },
+   "band": "四个关键环节的内在联系与循环机制",
+   "regions": {
+    "lt": {
+     "head": "数据获取（基础支撑）",
+     "num": 1,
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "@/components/icon-data.png",
+         "label": "icon-data",
+         "caption": ""
+        },
+        {
+         "type": "markers",
+         "items": [
+          "采集多源运行数据",
+          "清洗与质量检查",
+          "构建可复用数据集"
+         ],
+         "fill": "light"
+        }
+       ],
+       "widths": [
+        1,
+        1.35
+       ]
+      }
+     ]
+    },
+    "rt": {
+     "head": "模型构建（核心驱动）",
+     "num": 2,
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "@/components/icon-model.png",
+         "label": "icon-model",
+         "caption": ""
+        },
+        {
+         "type": "markers",
+         "items": [
+          "区间预测网络",
+          "按时段校准覆盖率",
+          "输出可解释误差"
+         ],
+         "fill": "light"
+        }
+       ],
+       "widths": [
+        1,
+        1.35
+       ]
+      }
+     ]
+    },
+    "rb": {
+     "head": "调度部署（落地实现）",
+     "num": 3,
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "@/components/icon-deploy.png",
+         "label": "icon-deploy",
+         "caption": ""
+        },
+        {
+         "type": "markers",
+         "items": [
+          "区间接入两阶段调度",
+          "日前计划下发",
+          "日内滚动修正"
+         ],
+         "fill": "light"
+        }
+       ],
+       "widths": [
+        1,
+        1.35
+       ]
+      }
+     ]
+    },
+    "lb": {
+     "head": "评估反馈（优化迭代）",
+     "num": 4,
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "@/components/icon-feedback.png",
+         "label": "icon-feedback",
+         "caption": ""
+        },
+        {
+         "type": "markers",
+         "items": [
+          "偏差与成本复盘",
+          "识别失准时段",
+          {
+           "text": "反馈驱动模型重训",
+           "highlights": [
+            "模型重训"
+           ]
+          }
+         ],
+         "fill": "light"
+        }
+       ],
+       "widths": [
+        1,
+        1.35
+       ]
+      }
+     ]
+    },
+    "center": {
+     "items": [
+      {
+       "type": "cycle",
+       "items": [
+        "数据\n获取",
+        "模型\n构建",
+        "调度\n部署",
+        "评估\n反馈"
+       ],
+       "center": "四环节\n循环促进\n持续优化"
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "结论与启示：让数据、模型、调度与评估形成相互促进、持续迭代的研究体系",
+    "highlights": [
+     "相互促进、持续迭代"
+    ]
+   },
+   "page_type": "P08"
+  },
+  {
+   "style": "info",
+   "title": "2.7 突破区间预测的校准难题",
+   "lead": {
+    "tag": "核心目标",
+    "text": "建立“分位数回归—时段校准—覆盖率约束”的区间预测框架，破解“区间过宽、调度不敢用”的难题",
+    "highlights": [
+     "“区间过宽、调度不敢用”"
+    ]
+   },
+   "process": {
+    "items": [
+     "数据标准化",
+     "模型自主化",
+     "校准精细化",
+     "调度工程化"
+    ],
+    "style": "pill"
+   },
+   "regions": {
+    "l": {
+     "grid": [
+      0,
+      12,
+      0,
+      12
+     ],
+     "foot": "形成可信的区间预测模型",
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "stack",
+         "items": [
+          {
+           "type": "para",
+           "text": "多源数据质控",
+           "color": "navy"
+          },
+          {
+           "type": "figure",
+           "file": "images/clean.png",
+           "label": "clean",
+           "caption": ""
+          },
+          {
+           "type": "para",
+           "text": "保证多源数据的一致性",
+           "size": 13.2
+          }
+         ],
+         "gap": 0.04
+        },
+        {
+         "type": "stack",
+         "items": [
+          {
+           "type": "para",
+           "text": "分位数网络训练",
+           "color": "navy"
+          },
+          {
+           "type": "figure",
+           "file": "images/loss.png",
+           "label": "loss",
+           "caption": ""
+          },
+          {
+           "type": "para",
+           "text": "9 个分位点同步输出",
+           "size": 13.2
+          }
+         ],
+         "gap": 0.04
+        }
+       ]
+      },
+      {
+       "type": "note",
+       "text": "时段—工况双维度覆盖率校准",
+       "tone": "red",
+       "h": 0.42
+      }
+     ]
+    },
+    "r": {
+     "grid": [
+      12,
+      12,
+      0,
+      12
+     ],
+     "foot": "建立区间引导的鲁棒调度方法",
+     "items": [
+      {
+       "type": "fig_list",
+       "fig_w": 0.34,
+       "items": [
+        {
+         "figure": {
+          "type": "figure",
+          "file": "images/forecast.png",
+          "label": "forecast",
+          "caption": ""
+         },
+         "title": "区间预测",
+         "text": "覆盖率 91.2%，宽度缩窄 23%",
+         "highlights": [
+          "缩窄 23%"
+         ]
+        },
+        {
+         "figure": {
+          "type": "figure",
+          "file": "images/robust.png",
+          "label": "robust",
+          "caption": ""
+         },
+         "title": "工况稳健",
+         "text": "极端天气、数据缺失下误差仍可控"
+        },
+        {
+         "figure": {
+          "type": "figure",
+          "file": "images/dispatch.png",
+          "label": "dispatch",
+          "caption": ""
+         },
+         "title": "调度接口",
+         "text": "区间上下界直接作为鲁棒约束"
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "校准后的区间既“覆盖得住”又“足够窄”，调度才愿意用",
+    "highlights": [
+     "“覆盖得住”又“足够窄”"
+    ]
+   }
+  },
+  {
+   "type": "agenda",
+   "items": [
+    "研究背景与问题",
+    "方法与技术路线",
+    "结果与应用",
+    "计划与结论"
+   ],
+   "active": 2
+  },
+  {
+   "style": "info",
+   "title": "3.1 预测结果与图示说明",
+   "layout": "info_big",
+   "lead": {
+    "text": "区间预测在 60 天测试集上取得稳定精度，并揭示了误差集中于早晚高峰的规律",
+    "highlights": [
+     "早晚高峰"
+    ]
+   },
+   "regions": {
+    "main": {
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/forecast.png",
+       "label": "forecast",
+       "caption": "黑线为实测，红线为本文方法，浅蓝带为 90% 预测区间",
+       "role": "big",
+       "caption_style": "box",
+       "caption_title": "图 1  典型日预测结果"
+      }
+     ]
+    },
+    "side": {
+     "items": [
+      {
+       "type": "section",
+       "head": "主要发现",
+       "items": [
+        {
+         "text": "MAPE 降至 3.1%，为最优",
+         "highlights": [
+          "3.1%"
+         ]
+        },
+        "误差集中在早晚爬坡时段",
+        "区间宽度随爬坡自适应"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "证据解读",
+       "items": [
+        "五折交叉验证结果一致",
+        "消融实验排除单一特征影响"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "研究意义",
+       "items": [
+        "为备用容量按时段配置提供依据",
+        {
+         "text": "可直接迁移到同类园区",
+         "highlights": [
+          "迁移"
+         ]
+        }
+       ]
+      }
+     ],
+     "valign": "spread"
+    }
+   },
+   "summary": {
+    "text": "结论：误差有明确的时段结构，这是后续按风险配置备用的前提",
+    "highlights": [
+     "明确的时段结构"
+    ]
+   },
+   "page_type": "P04"
+  },
+  {
+   "style": "info",
+   "title": "3.2 主要结果与研究结论",
+   "layout": "info_three_strip",
+   "lead": {
+    "text": "把结果、证据与结论对应起来，并明确研究贡献、适用范围与后续工作"
+   },
+   "band": "关键结果：实验验证、对比分析与研究结论",
+   "regions": {
+    "a": {
+     "head": "结果一：预测精度",
+     "head_style": "bar",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/mape.png",
+       "label": "mape",
+       "caption": ""
+      },
+      {
+       "type": "markers",
+       "items": [
+        {
+         "text": "MAPE 较最优基准再降 28%",
+         "highlights": [
+          "再降 28%"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "b": {
+     "head": "结果二：调度效益",
+     "head_style": "bar",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/effect.png",
+       "label": "effect",
+       "caption": ""
+      },
+      {
+       "type": "markers",
+       "items": [
+        {
+         "text": "运行成本降低 12.4%",
+         "highlights": [
+          "12.4%"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "c": {
+     "head": "结果三：多目标权衡",
+     "head_style": "bar",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/pareto.png",
+       "label": "pareto",
+       "caption": ""
+      },
+      {
+       "type": "markers",
+       "items": [
+        {
+         "text": "折中方案减碳 21.6%",
+         "highlights": [
+          "21.6%"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "bottom": {
+     "side": "研究贡献\n与后续工作",
+     "side_w": 1.9,
+     "fill": "light",
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "section",
+         "head": "主要贡献",
+         "items": [],
+         "text": "时段校准的区间预测接入鲁棒调度",
+         "head_style": "bar"
+        },
+        {
+         "type": "section",
+         "head": "适用范围",
+         "items": [],
+         "text": "光伏占比 30% 以上的工业园区",
+         "head_style": "bar"
+        },
+        {
+         "type": "section",
+         "head": "后续研究",
+         "items": [],
+         "text": "引入电价与碳价，拓展多园区协同",
+         "head_style": "bar"
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "研究结论：方法在精度、成本与碳排三项指标上均有改善，具有推广价值",
+    "highlights": [
+     "精度、成本与碳排三项指标"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "3.3 四类典型场景的验证",
+   "layout": "info_quad",
+   "lead": {
+    "text": "在正常日、节假日、极端天气与数据缺失四类场景下检验方法的适用性",
+    "highlights": [
+     "四类场景"
+    ]
+   },
+   "regions": {
+    "a": {
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/load.png",
+         "label": "load",
+         "caption": ""
+        },
+        {
+         "type": "section",
+         "head": "正常工作日",
+         "items": [
+          "MAPE 3.1%",
+          "区间覆盖率 91%",
+          "双峰形态稳定"
+         ]
+        }
+       ],
+       "widths": [
+        1.4,
+        1
+       ]
+      }
+     ]
+    },
+    "b": {
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/heatmap.png",
+         "label": "heatmap",
+         "caption": ""
+        },
+        {
+         "type": "section",
+         "head": "节假日",
+         "items": [
+          "负荷整体下移",
+          "早高峰消失",
+          "MAPE 3.4%"
+         ]
+        }
+       ],
+       "widths": [
+        1.4,
+        1
+       ]
+      }
+     ]
+    },
+    "c": {
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/pv_price.png",
+         "label": "pv_price",
+         "caption": ""
+        },
+        {
+         "type": "section",
+         "head": "极端天气",
+         "items": [
+          "光伏骤降",
+          "区间自动放宽",
+          "MAPE 3.6%"
+         ]
+        }
+       ],
+       "widths": [
+        1.4,
+        1
+       ]
+      }
+     ]
+    },
+    "d": {
+     "items": [
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/robust.png",
+         "label": "robust",
+         "caption": ""
+        },
+        {
+         "type": "section",
+         "head": "数据缺失 20%",
+         "items": [
+          "先识别后补全",
+          "补全后误差 4.2%",
+          {
+           "text": "仍优于基准",
+           "highlights": [
+            "仍优于基准"
+           ]
+          }
+         ]
+        }
+       ],
+       "widths": [
+        1.4,
+        1
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "四类场景误差均控制在 4.5% 以内，方法对工况变化稳健",
+    "highlights": [
+     "4.5% 以内"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "3.4 研究成果的平台化应用",
+   "layout": "info_split",
+   "lead": {
+    "text": "成果在园区能源管理平台上线运行，形成可复用的预测调度工具与示范案例",
+    "highlights": [
+     "上线运行"
+    ]
+   },
+   "sublead": {
+    "text": "一旦光伏出力或负荷突变，平台可在 15 min 内完成日内修正，减少人工干预"
+   },
+   "regions": {
+    "left": {
+     "grid": [
+      0,
+      14,
+      0,
+      12
+     ],
+     "items": [
+      {
+       "type": "card",
+       "figure": {
+        "type": "figure",
+        "file": "images/p23.jpg",
+        "label": "p23",
+        "caption": "",
+        "prompt": "光储充系统容量配置与运行优化：左侧 25 年逐时历史数据，中间 8760 h 优化（光伏、储能、充电桩），右侧容量配置、运行策略、典型日聚类。16:9。"
+       },
+       "fig_w": 0.42,
+       "title": "园区能源管理平台",
+       "items": [
+        "日前计划自动生成",
+        "日内 15 min 滚动修正",
+        "偏差与碳排在线看板"
+       ],
+       "text": "覆盖光伏 12 MW、储能 6 MWh",
+       "items_red": false,
+       "weight": 1.3
+      },
+      {
+       "type": "row",
+       "items": [
+        {
+         "type": "figure",
+         "file": "images/soc.png",
+         "label": "soc",
+         "caption": "储能运行曲线",
+         "caption_style": "box"
+        },
+        {
+         "type": "figure",
+         "file": "images/effect.png",
+         "label": "effect",
+         "caption": "优化前后指标",
+         "caption_style": "box"
+        }
+       ]
+      }
+     ]
+    },
+    "right": {
+     "grid": [
+      14,
+      10,
+      0,
+      12
+     ],
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/p24.jpg",
+       "label": "p24",
+       "caption": "",
+       "prompt": "合同能源管理下的投资与运行评估：左侧负荷水平与合同价格变化，右侧投资前评估与建成后评估两条线，下方对照表。16:9。",
+       "overlay": {
+        "text": "制定投资前、建成后两阶段的评估标准（负荷水平、合同价格）",
+        "highlights": [
+         "（负荷水平、合同价格）"
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "从论文方法到上线工具，成果已在示范园区连续运行",
+    "highlights": [
+     "连续运行"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "3.5 应用推广路径",
+   "layout": "info_three",
+   "lead": {
+    "text": "以“示范—复制—推广”为路径，立足园区运行需求，依托平台与数据标准实现跨园区复用"
+   },
+   "band": "构建“示范园区—同类复制—区域推广”的全链条推广体系",
+   "regions": {
+    "a": {
+     "items": [
+      {
+       "type": "para",
+       "text": "在示范园区完成全流程部署\n形成运行规程与评估报告",
+       "size": 13.2
+      },
+      {
+       "type": "para",
+       "text": "示范引领—标准输出",
+       "color": "red"
+      },
+      {
+       "type": "figure",
+       "file": "images/p23.jpg",
+       "label": "p23",
+       "caption": "打通落地“最后一公里”",
+       "prompt": "光储充系统容量配置与运行优化：左侧 25 年逐时历史数据，中间 8760 h 优化（光伏、储能、充电桩），右侧容量配置、运行策略、典型日聚类。16:9。",
+       "caption_style": "box"
+      }
+     ],
+     "gap": 0.06
+    },
+    "b": {
+     "items": [
+      {
+       "type": "para",
+       "text": "向同类工业园区复制部署\n只需替换数据接口与参数",
+       "size": 13.2
+      },
+      {
+       "type": "para",
+       "text": "同类复制—快速适配",
+       "color": "red"
+      },
+      {
+       "type": "figure",
+       "file": "images/p21.jpg",
+       "label": "p21",
+       "caption": "构建可复制的工具链",
+       "prompt": "园区多目标预测与自适应更新流程：左侧多源数据输入（历史运行、气象、市场），中间日前与日内预测，右侧预测值与区间；下方实际反馈驱动模型校正与重训。16:9。",
+       "caption_style": "box"
+      }
+     ],
+     "gap": 0.06
+    },
+    "c": {
+     "items": [
+      {
+       "type": "para",
+       "text": "与区域能源服务商合作\n按合同能源管理模式推广",
+       "size": 13.2
+      },
+      {
+       "type": "para",
+       "text": "区域推广—商业闭环",
+       "color": "red"
+      },
+      {
+       "type": "figure",
+       "file": "images/p24.jpg",
+       "label": "p24",
+       "caption": "形成区域推广格局",
+       "prompt": "合同能源管理下的投资与运行评估：左侧负荷水平与合同价格变化，右侧投资前评估与建成后评估两条线，下方对照表。16:9。",
+       "caption_style": "box"
+      }
+     ],
+     "gap": 0.06
+    }
+   },
+   "summary": {
+    "text": "推广的关键是数据标准统一：接口一致，模型才能跨园区复用",
+    "highlights": [
+     "数据标准统一"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "3.6 经济与社会效益",
+   "lead": {
+    "text": "方法落地后，在经济、低碳与安全三方面产生可量化的效益，支撑园区“双碳”目标",
+    "highlights": [
+     "可量化的效益"
+    ]
+   },
+   "band": {
+    "text": "紧密对接园区降本增效与“双碳”转型目标",
+    "images": [
+     "images/p23.jpg",
+     "images/p21.jpg",
+     "images/p24.jpg",
+     "images/p22.jpg"
+    ]
+   },
+   "layout": "info_table_fig",
+   "regions": {
+    "right": {
+     "grid": [
+      16,
+      8,
+      0,
+      12
+     ],
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/effect.png",
+       "label": "effect",
+       "caption": "优化前后关键指标",
+       "caption_style": "box"
+      },
+      {
+       "type": "figure",
+       "file": "images/pareto.png",
+       "label": "pareto",
+       "caption": "成本—碳排权衡",
+       "caption_style": "box"
+      }
+     ]
+    },
+    "left": {
+     "grid": [
+      0,
+      16,
+      0,
+      12
+     ],
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "table",
+       "widths": [
+        1.5,
+        1.6,
+        4.2
+       ],
+       "columns": [
+        "效益维度",
+        "核心价值",
+        "具体体现与说明"
+       ],
+       "rows": [
+        [
+         "经济效益",
+         "降低运行成本",
+         "日运行成本降低 12.4%，年节约约 400 万元"
+        ],
+        [
+         "低碳效益",
+         "减少碳排放",
+         "碳排放降低 21.6%，弃光率降低 59%"
+        ],
+        [
+         "安全效益",
+         "降低缺额风险",
+         "备用按风险分配，缺额概率 < 1%"
+        ],
+        [
+         "推广效益",
+         "形成标准工具",
+         "接口标准化，同类园区部署仅需 2 周"
+        ]
+       ],
+       "highlights": [
+        "12.4%",
+        "21.6%",
+        "59%",
+        "2 周"
+       ],
+       "highlight_rows": [
+        2
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "效益核心：同一套方法同时带来降本与减碳，不需要二选一",
+    "highlights": [
+     "降本与减碳"
+    ]
+   }
+  },
+  {
+   "type": "agenda",
+   "items": [
+    "研究背景与问题",
+    "方法与技术路线",
+    "结果与应用",
+    "计划与结论"
+   ],
+   "active": 3
+  },
+  {
+   "style": "info",
+   "title": "4.1 三个研究方向的并行推进",
+   "layout": "info_three",
+   "lead": {
+    "text": "面向总体目标，设置三个相互关联、协同推进的研究方向，形成系统化的研究布局",
+    "highlights": [
+     "相互关联、协同推进"
+    ]
+   },
+   "regions": {
+    "a": {
+     "band": "方向一：误差机理研究",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/heatmap.png",
+       "label": "heatmap",
+       "caption": "",
+       "weight": 1.1
+      },
+      {
+       "type": "section",
+       "head": "主要研究任务",
+       "items": [
+        "任务 1：负荷时空异质性刻画",
+        "任务 2：误差来源分解"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期研究成果",
+       "items": [
+        "误差结构分析框架",
+        {
+         "text": "高水平论文 1—2 篇",
+         "highlights": [
+          "1—2 篇"
+         ]
+        }
+       ]
+      }
+     ],
+     "gap": 0.08
+    },
+    "b": {
+     "band": "方向二：区间预测方法",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/forecast.png",
+       "label": "forecast",
+       "caption": "",
+       "weight": 1.1
+      },
+      {
+       "type": "section",
+       "head": "主要研究任务",
+       "items": [
+        "任务 1：分位数回归网络",
+        "任务 2：时段覆盖率校准"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期研究成果",
+       "items": [
+        "区间预测工具包",
+        "发明专利 1 项"
+       ]
+      }
+     ],
+     "gap": 0.08
+    },
+    "c": {
+     "band": "方向三：鲁棒调度应用",
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/dispatch.png",
+       "label": "dispatch",
+       "caption": "",
+       "weight": 1.1
+      },
+      {
+       "type": "section",
+       "head": "主要研究任务",
+       "items": [
+        "任务 1：两阶段鲁棒调度",
+        "任务 2：示范园区验证"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期研究成果",
+       "items": [
+        "调度软件著作权",
+        "示范应用报告"
+       ]
+      }
+     ],
+     "gap": 0.08
+    }
+   },
+   "summary": {
+    "text": "三个方向相互支撑、协同推进，共同支撑总体目标的实现",
+    "highlights": [
+     "相互支撑、协同推进"
+    ]
+   },
+   "page_type": "P09"
+  },
+  {
+   "style": "info",
+   "title": "4.2 四项研究任务的具体安排",
+   "layout": "info_four",
+   "lead": {
+    "text": "围绕研究目标设置四项具体任务，明确工作内容与预期成果，确保有序推进",
+    "highlights": [
+     "四项具体任务"
+    ]
+   },
+   "regions": {
+    "a": {
+     "band": "数据调研与分析",
+     "num": 1,
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/clean.png",
+       "label": "clean",
+       "caption": "",
+       "weight": 0.9
+      },
+      {
+       "type": "section",
+       "head": "主要工作内容",
+       "items": [
+        "收集 2 年运行数据",
+        "清洗与统计分析"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期成果",
+       "items": [
+        "园区数据集"
+       ]
+      }
+     ],
+     "gap": 0.08
+    },
+    "b": {
+     "band": "模型构建与训练",
+     "num": 2,
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/loss.png",
+       "label": "loss",
+       "caption": "",
+       "weight": 0.9
+      },
+      {
+       "type": "section",
+       "head": "主要工作内容",
+       "items": [
+        "设计区间预测网络",
+        "对比与消融实验"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期成果",
+       "items": [
+        "预测模型与论文"
+       ]
+      }
+     ],
+     "gap": 0.08
+    },
+    "c": {
+     "band": "调度系统开发",
+     "num": 3,
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/soc.png",
+       "label": "soc",
+       "caption": "",
+       "weight": 0.9
+      },
+      {
+       "type": "section",
+       "head": "主要工作内容",
+       "items": [
+        "两阶段调度求解",
+        "平台接口开发"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期成果",
+       "items": [
+        "调度原型系统"
+       ]
+      }
+     ],
+     "gap": 0.08
+    },
+    "d": {
+     "band": "应用验证与推广",
+     "num": 4,
+     "items": [
+      {
+       "type": "figure",
+       "file": "images/effect.png",
+       "label": "effect",
+       "caption": "",
+       "weight": 0.9
+      },
+      {
+       "type": "section",
+       "head": "主要工作内容",
+       "items": [
+        "示范园区运行",
+        "效益评估与反馈"
+       ]
+      },
+      {
+       "type": "section",
+       "head": "预期成果",
+       "items": [
+        {
+         "text": "应用评估报告",
+         "highlights": [
+          "评估报告"
+         ]
+        }
+       ]
+      }
+     ],
+     "gap": 0.08
+    }
+   },
+   "summary": {
+    "text": "四项任务紧密衔接、分工明确，确保按计划完成研究目标",
+    "highlights": [
+     "紧密衔接、分工明确"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "4.3 研究计划与阶段安排",
+   "layout": "info_full",
+   "lead": {
+    "text": "制定分阶段的研究计划，明确时间节点、阶段目标与预期成果，确保研究工作有序推进",
+    "highlights": [
+     "有序推进"
+    ]
+   },
+   "band": "研究总体计划：分阶段推进、逐步实现研究目标",
+   "regions": {
+    "main": {
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "timeline",
+       "items": [
+        {
+         "stage": "阶段一",
+         "title": "需求分析与数据准备",
+         "time": "2026.09 — 2026.12",
+         "blocks": [
+          {
+           "head": "阶段目标",
+           "items": [
+            "明确调度需求",
+            "完成数据集构建"
+           ]
+          },
+          {
+           "head": "预期成果",
+           "items": [
+            "需求分析报告",
+            "园区数据集"
+           ]
+          }
+         ]
+        },
+        {
+         "stage": "阶段二",
+         "title": "区间预测方法研究",
+         "time": "2027.01 — 2027.06",
+         "blocks": [
+          {
+           "head": "阶段目标",
+           "items": [
+            "提出区间预测模型",
+            "完成覆盖率校准"
+           ]
+          },
+          {
+           "head": "预期成果",
+           "items": [
+            "预测模型与代码",
+            "论文 1 篇"
+           ]
+          }
+         ]
+        },
+        {
+         "stage": "阶段三",
+         "title": "鲁棒调度与验证",
+         "time": "2027.07 — 2027.12",
+         "blocks": [
+          {
+           "head": "阶段目标",
+           "items": [
+            "两阶段调度建模",
+            "多工况对比验证"
+           ]
+          },
+          {
+           "head": "预期成果",
+           "items": [
+            "调度原型系统",
+            {
+             "text": "软件著作权 1 项",
+             "highlights": [
+              "1 项"
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "stage": "阶段四",
+         "title": "示范应用与总结",
+         "time": "2028.01 — 2028.06",
+         "blocks": [
+          {
+           "head": "阶段目标",
+           "items": [
+            "示范园区上线",
+            "形成研究结论"
+           ]
+          },
+          {
+           "head": "预期成果",
+           "items": [
+            "学位论文",
+            "应用评估报告"
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "阶段目标清晰、任务可落地，确保按计划产出高质量研究成果",
+    "highlights": [
+     "高质量研究成果"
+    ]
+   },
+   "page_type": "P11"
+  },
+  {
+   "style": "info",
+   "title": "4.4 优先推进的研究内容",
+   "layout": "info_split",
+   "lead": {
+    "text": "按“对成本的影响”和“技术成熟度”两个维度排序，先做影响大、基础好的内容",
+    "highlights": [
+     "影响大、基础好"
+    ]
+   },
+   "regions": {
+    "left": {
+     "grid": [
+      0,
+      13,
+      0,
+      12
+     ],
+     "items": [
+      {
+       "type": "quadrant",
+       "x_label": "技术成熟度",
+       "y_label": "对成本的影响",
+       "items": [
+        {
+         "title": "重点攻关",
+         "text": "极端工况区间校准\n影响大，但样本少、难度高"
+        },
+        {
+         "title": "优先推进",
+         "text": "区间预测接入调度\n影响大，模型与数据已具备",
+         "highlights": [
+          "接入调度"
+         ]
+        },
+        {
+         "title": "暂缓",
+         "text": "多园区博弈\n依赖外部数据，收益不确定"
+        },
+        {
+         "title": "顺手完成",
+         "text": "数据补全与对齐\n工作量小，是其他任务的前提"
+        }
+       ]
+      }
+     ]
+    },
+    "right": {
+     "grid": [
+      13,
+      11,
+      0,
+      12
+     ],
+     "items": [
+      {
+       "type": "callout",
+       "text": "先把区间接进调度，再回头攻极端工况",
+       "highlights": [
+        "区间接进调度"
+       ]
+      },
+      {
+       "type": "figure",
+       "file": "images/effect.png",
+       "label": "effect",
+       "caption": "",
+       "weight": 1.4
+      },
+      {
+       "type": "tags",
+       "items": [
+        "成本影响大",
+        "基础已具备",
+        "可快速验证"
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "优先级的依据是成本影响与成熟度，而不是技术难度",
+    "highlights": [
+     "成本影响与成熟度"
+    ]
+   }
+  },
+  {
+   "style": "info",
+   "title": "4.5 主要结论",
+   "layout": "info_full",
+   "lead": {
+    "text": "三条结论分别回答“误差有什么结构”“区间怎么用”“效益有多大”三个问题"
+   },
+   "regions": {
+    "main": {
+     "fill": "none",
+     "pad": 0,
+     "items": [
+      {
+       "type": "rows",
+       "items": [
+        {
+         "title": "预测误差具有明确的时段结构",
+         "text": "误差集中在早晚爬坡时段，按时段校准后区间宽度缩窄 23%",
+         "highlights": [
+          "缩窄 23%"
+         ],
+         "figure": {
+          "type": "figure",
+          "file": "images/forecast.png",
+          "label": "forecast",
+          "caption": ""
+         }
+        },
+        {
+         "title": "区间预测可以直接驱动鲁棒调度",
+         "text": "区间上下界作为调度约束，备用按风险分配，缺额概率低于 1%",
+         "figure": {
+          "type": "figure",
+          "file": "images/dispatch.png",
+          "label": "dispatch",
+          "caption": ""
+         }
+        },
+        {
+         "title": "降本与减碳可以同时实现",
+         "text": "运行成本降低 12.4%，碳排放降低 21.6%，弃光率降低 59%",
+         "highlights": [
+          "12.4%",
+          "21.6%"
+         ],
+         "figure": {
+          "type": "figure",
+          "file": "images/effect.png",
+          "label": "effect",
+          "caption": ""
+         }
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "summary": {
+    "text": "核心贡献：让预测的不确定性成为调度可用的信息",
+    "highlights": [
+     "调度可用的信息"
+    ]
+   },
+   "page_type": "P12"
+  },
+  {
+   "type": "end",
+   "info": [
+    "汇报人：示例",
+    "2026 年 10 月"
+   ]
+  }
+ ]
+}

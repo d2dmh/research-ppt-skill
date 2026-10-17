@@ -57,7 +57,8 @@ def paragraphs(shape):
         last = size
         bold = any(r.font.bold for r in runs)
         ppr = paragraph._p.pPr
-        bullet = ppr is not None and ppr.find('{http://schemas.openxmlformats.org/drawingml/2006/main}buChar') is not None
+        bu = ppr.find('{http://schemas.openxmlformats.org/drawingml/2006/main}buChar') if ppr is not None else None
+        bullet = ('sub' if bu.get('char') == '–' else True) if bu is not None else False
         spacing = paragraph.line_spacing if isinstance(paragraph.line_spacing, float) else None
         yield ''.join(r.text for r in runs), size, bold, runs, bullet, spacing
 
@@ -74,6 +75,7 @@ def check(path):
     deck = Presentation(path)
     sw, sh = inches(deck.slide_width), inches(deck.slide_height)
     issues = []
+    red_pages = []
 
     def add(level, slide, shape, message):
         issues.append({'level': level, 'slide': slide, 'shape': shape, 'message': message})
@@ -84,8 +86,12 @@ def check(path):
             box = (inches(shape.left), inches(shape.top), inches(shape.width), inches(shape.height))
             name = shape.name
             x, y, w, h = box
-            if x < -0.01 or y < -0.01 or x + w > sw + 0.01 or y + h > sh + 0.01:
-                add('error', number, name, f'超出页面边界 ({x:.2f},{y:.2f},{w:.2f},{h:.2f})')
+            bx, by, bw, bh = x, y, w, h
+            if abs(getattr(shape, 'rotation', 0) or 0) % 180 == 90:      # 竖排旋转文字：按旋转后的外框检查
+                cx, cy = x + w / 2, y + h / 2
+                bx, by, bw, bh = cx - h / 2, cy - w / 2, h, w
+            if bx < -0.01 or by < -0.01 or bx + bw > sw + 0.01 or by + bh > sh + 0.01:
+                add('error', number, name, f'超出页面边界 ({bx:.2f},{by:.2f},{bw:.2f},{bh:.2f})')
             if shape.has_chart:
                 solids.append((name, box))
                 chart = shape.chart
@@ -151,7 +157,7 @@ def check(path):
                 except AttributeError:
                     return False
             white = all(is_white(r) for _, _, _, runs, _, _ in content for r in runs)
-            if not white:   # reversed-out labels on blue shapes are designed to sit on top
+            if not white and not name.startswith('图上说明'):   # 蓝底反白字、压在图上的说明是有意叠放的
                 texts.append((name, box))
             missing = [r.text for _, _, _, runs, _, _ in content for r in runs
                        if CJK.search(r.text) and r._r.rPr is not None and r._r.rPr.get('lang') != 'zh-CN']
@@ -162,10 +168,10 @@ def check(path):
                     add('error', number, name, f'字号 {size:g}pt 过小：“{value[:16]}”')
                 elif size < MIN_PT['body'] and not white and not name.startswith(('页脚注释', '图注', '标注')):
                     add('warn', number, name, f'字号 {size:g}pt 偏小：“{value[:16]}”')
-                lines, height = measure(value, size, inner_w, bold, bullet, spacing)
+                lines, height = measure(value, size, inner_w, bold, bool(bullet), spacing, bullet == 'sub')
                 total += height - 0.04
                 em = size / 72 * (1.04 if bold else 1.0)
-                usable = inner_w - (0.28 if bullet else 0)
+                usable = inner_w - (0.56 if bullet == 'sub' else 0.28 if bullet else 0)
                 widest = max((text_width(l.rstrip().rstrip(''.join(CLOSING))) * em for l in lines if l.strip()), default=0)
                 if widest > usable + 0.06 and not white:
                     add('warn', number, name, f'有一个词或数字比框还宽（约 {widest:.2f} in > {usable:.2f} in），渲染时会被硬拆：减小字号或加宽')
@@ -176,7 +182,7 @@ def check(path):
                 cut = split_words(value, lines)
                 if cut:
                     add('warn', number, name, f'自动换行拆开了词语：{"、".join(cut[:3])}（在语义边界手动换行或缩短）')
-                elif jieba is None and len(lines) > 1 and usable < 4.2 and CJK.search(value) and not white:
+                elif jieba is None and len(lines) > value.count('\n') + 1 and usable < 4.2 and CJK.search(value) and not white:
                     add('warn', number, name, f'窄栏中文自动换行 {len(lines)} 行，请在渲染图上确认没有拆词（安装 jieba 可自动检查）')
                 if len(lines) > 1:
                     last = lines[-1].strip()
@@ -208,14 +214,14 @@ def check(path):
             if shape.has_text_frame and shape.text_frame.text.strip() and shape._element.find('.//' + A14) is None:
                 est = 0.04
                 for value, size, bold, runs, bullet, spacing in paragraphs(shape):
-                    est += measure(value, size, bw, bold, bullet, spacing)[1] - 0.04
+                    est += measure(value, size, bw, bold, bool(bullet), spacing, bullet == 'sub')[1] - 0.04
                 anchor = shape.text_frame._txBody.bodyPr.get('anchor')
                 bottom = by + (min(bh, (bh + est) / 2) if anchor == 'ctr' else min(bh, est))
             bodies.append((shape, (bx, by, bw, bh), bottom))
         panels = []
         for shape, (bx, by, bw, bh), _ in bodies:
             try:
-                gray = shape.shape_type == 1 and shape.fill.type == 1 and str(shape.fill.fore_color.rgb) in ('F2F2F2', 'F2F3F5')
+                gray = shape.name.startswith('分区框') or (shape.shape_type == 1 and shape.fill.type == 1 and str(shape.fill.fore_color.rgb) in ('F2F2F2', 'F2F3F5'))
             except Exception:
                 gray = False
             if gray and bw * bh > 2.5 and not shape.text_frame.text.strip():
@@ -231,7 +237,7 @@ def check(path):
                 continue
             free = py + ph - max(inside)
             if free > max(0.7, 0.28 * ph) and not closing:
-                add('warn', number, shape.name, f'灰底分区下方留白 {free:.1f} in（占 {free / ph:.0%}）：补一张配图（去AI味的 GPT 生图或参考图）、小图表或公式，或缩短、合并分区')
+                add('warn', number, shape.name, f'灰底分区下方留白 {free:.1f} in（占 {free / ph:.0%}）：先放大已有图表，再补配图 / 小图表 / 公式 / 表格，或缩短、合并分区')
         content_page = any(0.85 < inches(sh.top) < 1.05 and abs(inches(sh.left) - 1.08) < 0.1 and sh.has_text_frame and sh.text_frame.text.strip()
                            for sh in slide.shapes)
         if bodies and not panels and content_page and not closing:
@@ -241,7 +247,76 @@ def check(path):
         placeholders = [s.name for s in slide.shapes if s.is_placeholder]
         if placeholders:
             add('info', number, ', '.join(placeholders), '仍有预留图位（成稿前替换或明确标注）')
+        # 红色：强调色，一页最多 2 处（含页底结论条），表格里不用红
+        spots, table_red = [], False
+        for shape in slide.shapes:
+            if getattr(shape, 'has_table', False) and shape.has_table:
+                for row in shape.table.rows:
+                    for cell in row.cells:
+                        for para in cell.text_frame.paragraphs:
+                            if any(is_red(r) and r.text.strip() for r in para.runs):
+                                table_red = True
+                continue
+            if not shape.has_text_frame or shape.name == '说明行标签':   # 标签说明行的红色标签是版式的一部分
+                continue
+            run_red = False          # 跨段连续的红色（一句话手动断行）算 1 处
+            for para in shape.text_frame.paragraphs:
+                for r in para.runs:
+                    if is_red(r) and r.text.strip():
+                        if not run_red:
+                            spots.append(r.text.strip())
+                        run_red = True
+                    elif r.text.strip():
+                        run_red = False
+        info = any(sh.name in ('引导句', '总结条') for sh in slide.shapes)
+        if table_red and not info:     # info 页允许表格里标出关键词（参考图 4.2）
+            add('warn', number, '表格', '表格里用了红色：表格本身就是对照结构，红色改到正文判断句或去掉')
+        limit = 4 if info else 2
+        if len(spots) > limit:
+            add('warn', number, '红色', f'红色强调 {len(spots)} 处（{"、".join(spots[:4])}…）：一页最多 {limit} 处，只留最该被记住的判断或数字')
+        if not info:
+            red_pages.append(bool(spots))
+        # 成品稿不出现免责、来源追溯与改稿口气
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                hit = [k for k in DISCLAIMERS if k in shape.text_frame.text]
+                if hit:
+                    add('error', number, shape.name, f'成品稿里出现免责/改稿字样“{hit[0]}”：删掉，来源口头讲')
+    if len(red_pages) >= 5 and sum(red_pages) > 0.4 * len(red_pages):
+        add('warn', 0, '全稿', f'{sum(red_pages)}/{len(red_pages)} 页有红色：强调色宜少（一般不超过三成页面），只留有判断的页面')
+    # 小节编号连续：同一部分内 1.1、1.2、1.3…不跳号
+    last = {}
+    for number, slide in enumerate(deck.slides, 1):
+        for shape in slide.shapes:
+            if shape.has_text_frame and ((0.85 < inches(shape.top) < 1.05 and inches(shape.left) < 1.3) or shape.name == '页标题编号'):
+                m = re.match(r'^\s*(\d+)\.(\d+)(\s|$)', shape.text_frame.text)
+                if m:
+                    major, minor = int(m.group(1)), int(m.group(2))
+                    expect = last.get(major, 0) + 1
+                    if minor != expect:
+                        add('warn', number, '页内标题', f'小节编号 {major}.{minor} 不连续（应为 {major}.{expect}）：删页或合并后要重排编号')
+                    last[major] = minor
+    # 页码：写死的数字与实际页序不符（删页 / 插页后常见）
+    for number, slide in enumerate(deck.slides, 1):
+        for shape in slide.shapes:
+            if shape.has_text_frame and inches(shape.top) > 7.15 and inches(shape.left) > 11.5:
+                xml = shape._element
+                has_field = xml.find('.//{http://schemas.openxmlformats.org/drawingml/2006/main}fld') is not None
+                value = shape.text_frame.text.strip()
+                if value.isdigit() and not has_field and int(value) != number:
+                    add('warn', number, '页码', f'页脚写死的页码是 {value}，实际是第 {number} 页：改用幻灯片编号字段')
     return issues
+
+
+DISCLAIMERS = ('AI生成', 'AI 生成', 'AI-generated', '逐字核对', '待补', '此处插入', '依据材料',
+               '不虚构', '教学归纳', '截图位', '仅供版式', '不代表本研究')
+
+
+def is_red(run):
+    try:
+        return run.font.color is not None and run.font.color.type is not None and str(run.font.color.rgb) in ('C00000', 'DE1515')
+    except AttributeError:
+        return False
 
 
 def main():

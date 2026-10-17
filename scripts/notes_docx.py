@@ -26,7 +26,13 @@ def set_font(run, size, bold=False, color=None):
 
 
 def slide_title(slide):
-    """Page title = bold text box nearest y≈0.93 in (content pages) or the largest text (cover)."""
+    """页标题：info 风格按形状名取（页标题编号 + 页标题 / 封面题目 / 目录 / 结束页）；其他稿子取 y≈0.93 in 的粗体或最大字。"""
+    named = {sh.name: sh.text_frame.text.strip().replace('\n', ' ') for sh in slide.shapes if sh.has_text_frame}
+    if '页标题' in named:
+        return (named.get('页标题编号', '') + ' ' + named['页标题']).strip()
+    for key, fallback in (('封面题目', None), ('结束主句', None), ('目录项', '目录')):
+        if key in named:
+            return fallback or named[key]
     best, best_key = '', None
     for shape in slide.shapes:
         if not shape.has_text_frame or not shape.text_frame.text.strip():

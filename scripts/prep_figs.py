@@ -13,8 +13,9 @@ have = miss = 0
 def walk(node):
     global have, miss
     if isinstance(node, dict):
-        if node.get('type') == 'figure' and node.get('file'):
-            f = os.path.join(base, node['file'])
+        if node.get('type') in ('figure', 'paper_figure') and node.get('file'):
+            f = (os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', node['file'][2:])
+                 if node['file'].startswith('@/') else os.path.join(base, node['file']))
             if os.path.exists(f):
                 have += 1
             else:

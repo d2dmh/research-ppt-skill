@@ -123,12 +123,47 @@ def header(slide, section, section_title, title, page, meta):
     box(slide, 1.13, 0.75, 11.91, 0.083, BLUE)   # reference header rule: 0.083 in
     text(slide, title, 1.08, 0.93, 11.7, 0.5, 18, INK, True)
     box(slide, 0, 7.24, 13.333333, 0.26, BLUE)
-    text(slide, str(page), 12.6, 7.24, 0.43, 0.25, 12, 'FFFFFF', align=PP_ALIGN.RIGHT)
+    slide_number(slide, page, 12.3, 7.24, 0.73, 0.25)
+
+
+def slide_number(slide, page, x, y, w, h):
+    """页码用 PowerPoint 的“幻灯片编号”字段：删页、插页、调顺序后自动重排，
+    不会出现写死的旧页码（用户稿删了两页后，后面每页页码都错了 2）。"""
+    import uuid
+    item = text(slide, '', x, y, w, h, 12, 'FFFFFF', align=PP_ALIGN.RIGHT)
+    item.name = '页码'
+    paragraph = item.text_frame.paragraphs[0]
+    for run in list(paragraph.runs):
+        paragraph._p.remove(run._r)
+    field = OxmlElement('a:fld')
+    field.set('id', '{%s}' % str(uuid.uuid4()).upper())
+    field.set('type', 'slidenum')
+    props = OxmlElement('a:rPr')
+    props.set('lang', 'zh-CN')
+    props.set('sz', '1200')
+    fill = OxmlElement('a:solidFill')
+    color = OxmlElement('a:srgbClr')
+    color.set('val', 'FFFFFF')
+    fill.append(color)
+    props.append(fill)
+    latin = OxmlElement('a:latin')
+    latin.set('typeface', 'Arial')
+    props.append(latin)
+    field.append(props)
+    value = OxmlElement('a:t')
+    value.text = str(page)
+    field.append(value)
+    end = paragraph._p.find(qn('a:endParaRPr'))
+    if end is not None:
+        end.addprevious(field)
+    else:
+        paragraph._p.append(field)
+    return item
 
 
 def strip(slide, value):
     box(slide, 0.65, 6.43, 12.0, 0.57, ORANGE)
-    text(slide, value, 0.85, 6.53, 11.55, 0.35, 15, RED, True)
+    text(slide, value, 0.85, 6.53, 11.55, 0.35, 16, INK, False)   # 页底结论条：黑色 16pt，红色留给句内判断
 
 
 def cover(slide, spec, meta):
@@ -348,8 +383,9 @@ def figure(slide, definition, x, y, width, height):
         note.name = '标注-' + annotation['text'][:12]
     caption = definition.get('caption', label)
     if caption:
-        text(slide, caption, x, fy+fh+0.08, width, 0.42, definition.get('caption_size', 13), INK,
-             align=PP_ALIGN.CENTER).name = '图注-' + label
+        color = {'red': RED, 'blue': BLUE, 'navy': '1E3F99'}.get(definition.get('caption_color'), definition.get('caption_color') or INK)
+        text(slide, caption, x, fy+fh+0.08, width, 0.42, definition.get('caption_size', 13), color,
+             definition.get('caption_bold', False), align=PP_ALIGN.CENTER).name = '图注-' + label
 
 
 def visual(slide, spec):

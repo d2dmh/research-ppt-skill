@@ -25,8 +25,8 @@ def char_width(ch):
         return 0.38
     if 0x0370 <= o <= 0x03FF or 0x2190 <= o <= 0x22FF or o in (0x00B0, 0x00B1, 0x00D7, 0x00B7, 0x2212):
         return 0.6
-    if 0x2010 <= o <= 0x2027:      # dashes, quotes, ellipsis (narrow in YaHei)
-        return 0.6
+    if 0x2010 <= o <= 0x2027:      # 中文语境（lang=zh-CN）下引号、破折号、省略号按全角排
+        return 1.0
     return 1.0                     # CJK, fullwidth punctuation
 
 
@@ -70,14 +70,15 @@ def line_height(size_pt, spacing=1.18, after_pt=3):
     return size_pt * 1.23 * spacing / 72 + after_pt / 72
 
 
-def measure(value, size_pt, width_in, bold=False, bullet=False, spacing=None):
-    """Return (display_lines, height_in) for a text box with the deck's paragraph settings."""
+def measure(value, size_pt, width_in, bold=False, bullet=False, spacing=None, sub=False):
+    """Return (display_lines, height_in) for a text box with the deck's paragraph settings.
+    bullet → 0.28 in hanging indent; sub (second-level “–”) → 0.56 in."""
     em = size_pt / 72 * (1.04 if bold else 1.0)
-    width_em = max(width_in - (0.28 if bullet else 0), 0.1) / em
+    width_em = max(width_in - (0.56 if sub else 0.28 if bullet else 0), 0.1) / em
     shown = []
     for paragraph in value.split('\n'):
         shown.extend(wrap(paragraph, width_em))
-    return shown, len(shown) * line_height(size_pt, spacing or (1.3 if bullet else 1.18)) + 0.04
+    return shown, len(shown) * line_height(size_pt, spacing or (1.3 if (bullet or sub) else 1.18)) + 0.04
 
 
 def visible_count(fragment):

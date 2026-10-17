@@ -1,111 +1,128 @@
-# 科研场景 PPT Skill
+# 科研场景 PPT Skill（蓝白信息图式）
 
 [English](#english) | 中文
 
-把「按我们组那份答辩稿的样式，做一份科研汇报 PPT」这件事，从**每次重新摸索**变成**一条可复用的流水线**。
+把“做一份答辩 / 开题 / 组会汇报 PPT”从每次重新摸索，变成一条可复用的流水线：同一套蓝白信息图式视觉，原生可编辑的 PPTX，内容来自你的材料。
 
-这是给 AI agent 用的技能包（Hermes Agent / Claude Code 之类的编码助手都能加载）：`SKILL.md` 是给 agent 看的操作手册，`scripts/` 是真正干活的 Python 脚本。
+这是给 AI agent 用的技能包（Hermes Agent / Claude Code / Codex 都能加载）：`SKILL.md` 是给 agent 的操作手册，`scripts/` 是干活的 Python 脚本，`references/info-style.md` 是视觉规范与版式库。
 
----
+## 长什么样
 
-## 它到底是什么
+每个内容页从上到下：页标题（“2.1 ｜ 两种方案对比”）→ ✓ 引导句 → 深蓝标题带（这页的一句话判断）→ 图文区（图 + 浅蓝小标题条 + ■ 要点、技术路线矩阵、闭环、时间轴、对比表……）→ ■ 底部结论条，红字点睛。配色与字号取自《蓝白科研答辩模板》实测：深蓝 #073DA5、正文 #111722、红 #DE1515、细边框 #9CB3D3、浅蓝 #EAF0FC。
 
-**做的是风格迁移，不是套模板。** 给它一份参考稿（答辩 PPT、组会 PPT、别人的好稿子都行），它会把参考稿的**字号、色号、版面坐标、信息密度**量出来，然后用**原生可编辑的 PPTX**（不是图片拼出来的）复现同一套视觉语言，内容换成你的研究。
+`assets/info-demo.json` 是 28 页完整示例（园区综合能源系统负荷预测与优化调度）：封面、4 次目录、22 种内容页、结束页。
 
-**它不做什么**：不提供模板下载，不帮你想研究内容，不把内容外包给 AI。内容永远来自你给的材料。
+## 16 个推荐页型
+
+大纲阶段先定页型，再从骨架起步，不要每页现编版式。总览图 `assets/page-types.jpg` 可以直接发给网页端 GPT；可套用的 JSON 骨架在 `assets/page-types.json`（按编号取 `skeleton`，只换文字和图）。
+
+| 页型 | 用在哪 | 图位 |
+|---|---|---|
+| P01 背景需求页 | 研究背景、现实需求、研究对象 | 中图 1 + 中图 1 + 小图 1 |
+| P02 双栏对比页 | 两个瓶颈、两种现状、前后对比 | 中图 2 |
+| P03 方案优缺点页 | 两种方法 / 方案的选择 | 小图 2 |
+| P04 大图解读页 | 论文框架、技术总图、核心结果 | 大图 1（role: big） |
+| P05 流程步骤页 | 研究流程、方法步骤、实施过程 | 小图 4 |
+| P06 技术路线矩阵页 | 数据层 / 方法层 / 验证层 | 小图 9 |
+| P07 分层架构页 | 系统 / 平台架构、模块关系 | 无图 |
+| P08 四环闭环页 | 四个环节的循环、迭代机制 | 小图 4 |
+| P09 三栏并列页 | 三个方向、三项任务、三条结论 | 中图 3 |
+| P10 对比表页 | 多维对比、方案选择、效益汇总 | 小图 4（表下图带） |
+| P11 时间轴计划页 | 研究计划、阶段安排 | 无图 |
+| P12 结论行页 | 主要结论、创新点、预期成果 | 小图 3 |
+| P13 问题拆解页 | 当前卡点、讨论重点 | 无图 |
+| P14 进展总表页 | 组会进展、任务完成情况 | 无图 |
+| P15 论文信息卡页 | 文献汇报的出发点 | 小图 1 |
+| P16 分点结论页 | 文献 / 结果的三条结论 | 中图 3 |
+
+`references/outline.md` 里有把这些页型交给网页端 GPT 的大纲提示词：每页标页型编号、大 / 中 / 小图位、分点内容，拿回来就能直接填骨架。
+
+## 配图分工
+
+| 图的用途 | 谁画 |
+|---|---|
+| 概念、流程、角色、状态（检测 / 隔离 / 切换 / 重联、边界、三层、数据流、充放电……） | 网页端 ChatGPT，蓝白扁平风，一次要 8–9 张、每张独立 |
+| 定量对比（成本高低、SOC 轨迹、误差分布、日负荷曲线） | 本机 matplotlib，图注写“示意数据” |
+| 系统架构 / 单线接线 / 分层控制 | 网页端 ChatGPT，一页一张大图 |
+
+插画贴进页里之前：要读的标签 ≥ 3 个就给到 3.5 in 宽（放不下换三栏 / 四栏，别缩图）；图里自带的标题条要裁掉；交付前降采样到 1200 px 宽 + 量化 200 色。
+
+## 三条原则
+
+- **一页只讲清楚一件事**：标题带就是这页的一句话判断，第二个判断就拆页。
+- **信息密、留白少，但清晰**：空白用具体的图、小标题要点、流程条、表格填，不放大字号。
+- **图要具体**：数据图、论文原图、平台截图优先，GPT 只画具体对象。
 
 ## 能产出什么
 
 | 产物 | 说明 |
 |---|---|
-| 原生可编辑 PPTX | 每个文本框、表格、图形都能在 PowerPoint 里直接改 |
-| Word 逐字稿 | 每页一段口语化讲稿，含该页要讲的重点与过渡 |
-| 渲染预览 + 联系表 + PDF | 一次性看全稿，用于自查和转发 |
-| 校验报告 | 溢出、孤行、拆词、行末标点、小字号、分区留白，逐条列出 |
-
-## 踩出来的硬规则（都在 `SKILL.md` 里）
-
-- **红色是强调色**：一页最多 1 处，只落在"判断句"上；表格里不用红，术语名不标红。
-- **字号下限**：投影正文 ≥16pt、子点 12–13pt、**表格 ≥13pt**（11/12pt 投影看不清）。
-- **每页只服务一个判断**，核心要点 ≤4 条；一页说两遍的内容删掉一处。
-- **目录页在每个部分开头重复出现**，高亮当前部分（参考稿的既有结构）。
-- **成品稿不出现任何免责或自证文字**（"AI 生成示意""逐字核对""依据材料""待补"）——成品不是草稿。
-- **一页一张 16:9 的图最大约 9 英寸宽**（受版面区高限制）；素材/录屏位要占主体，别塞半栏。
-- **配图尺寸用脚本量，不靠感觉**：半栏放 16:9 的图，`h ≈ 区宽 × 9/16`；交付前打印每张图的实际英寸 + 表格字号（≥13pt）+ 图表坐标字号（≥12pt）核对一遍。图不够大就抢高度、移表格、换版式，**永远不靠缩图腾地方**。
-- **交付前做「质感对照」**：数一下这份稿子里 `chart`/`formula`/`table`/`figure` 各有几个（10 页级汇报：原生图表 ≥3、公式 ≥1）；再把新稿和已有稿子的联系表并排同屏看——一页都不带图的稿子必然看着薄。
-- **案例小节先放演示、再讲原理**：录屏页放在小节第一页，别压在小节最后。
-- **录屏位要真内嵌视频**（`scripts/embed_video.py`）：mp4 进 `ppt/media/`，载体图挂 `a:videoFile` + `p14:media` + `ppaction://media`，点击封面即可播放；只放截图或只挂文件链接都不算数。
-- **内嵌视频跨机器要稳**：媒体部件名用 ASCII（`video1.mp4`，中文名会被别的软件/别的机器丢掉）；整份控制在 25 MB 内（先压片子）；另交一份独立 mp4 做后备。
-- **页底结论条比正文大一号**：`takeaway` 用 16pt、橙条高 0.40 in（全页最该被记住的一句，结论句 ≤30 字）。
-- **分区小标题一律居中**；标题与正文/表格之间留 0.2–0.3 的行距（`gap`），别让表格顶着标题。
-- **明显的并列关系用「浅蓝同色系圆角卡片 + 柔和阴影 + 框内居中文字」**（`cards`，`fills` 由浅到深，如 `E7F0FA → DBE9F6 → CFE0F2`）；只有"一眼看出是并列"才用，有前后逻辑关系或体积差很大时继续用灰底分区。内容不满的分区写 `valign: "middle"`，**别把余量全堆在分区底部**。
-- **还没有数据的稿子（开题 / 方案汇报）不放"示意数据"图表**：评议老师会追问数字来源。改用「按公式计算的计划值」（样本量、允许误差对照）＋原生表格 / 流程 / 公式撑版面；措辞也不写"采用成熟量表""首次创新""导致…"这类越界结论。
-- **表格每行必须给全列数**：在 3 列表格里追加一个只有 2 个元素的行，第三格会渲染成空白格（脚本不报错，投影上就是"半截表格"）；改字号前先算列宽（13pt ≈ `列宽/0.18` 个汉字，14pt ≈ `列宽/0.194`）。
-- **密度有实测数值**：某个栏位一行放多少汉字、结论条多少字会折行、图注多少字会溢出，都在 `SKILL.md`，能省掉好几轮返工。
+| 原生可编辑 PPTX | 文本框、表格、图形、流程、矩阵都能在 PowerPoint 里直接改 |
+| Word 逐字稿 | 每页一段口语化讲稿 |
+| 渲染预览 + 联系表 + PDF | 一次看全稿 |
+| 检查报告 | 溢出、孤行、拆词、红字数量、留白、免责字样、编号跳号 |
 
 ## 安装
 
-**Hermes Agent**（推荐）：
+**Hermes Agent**：
 
 ```bash
 git clone https://github.com/d2dmh/research-ppt-skill.git \
   ~/.hermes/skills/productivity/research-ppt-skill
 ```
 
-**其他 agent**：把整个目录放到它能读到技能/知识库的地方；`SKILL.md` 就是全部说明，脚本是纯 Python，可以直接调用。
+**其他 agent**：把整个目录放到它能读到技能的地方，或在会话里说“读 `research-ppt-skill/SKILL.md`，按它执行”。
 
-**依赖**：
-
-```bash
-pip install python-pptx python-docx lxml Pillow
-# 可选：jieba（中文断词检查）、PyMuPDF（渲染成图）
-```
-
-渲染预览用 LibreOffice（macOS / Linux）；有 PowerPoint 时最终断行以 PowerPoint 为准。
+**依赖**：`pip install python-pptx python-docx lxml Pillow`；可选 `jieba`（断词检查）、`PyMuPDF` + LibreOffice（渲染预览）。详见 `INSTALL.md`。
 
 ## 怎么用
 
-1. 让 agent 加载这个技能，把**参考稿**和**主题**给它；
-2. 它会先问你要材料（场合与听众、时长/页数、核心内容、署名与 logo、必须讲的重点），再出**逐页大纲**给你确认；
-3. 确认后生成 PPTX、讲稿与预览，按校验报告改——改内容只动内容 JSON，不手改 PPTX。
+1. 让 agent 加载技能，告诉它主题；
+2. 它会先要材料（场合与听众、时长、论文原图与数据、署名与 logo），再出逐页大纲（每页页型编号 + 大 / 中 / 小图位）；
+3. 按大纲写内容 JSON → 生成 PPTX → 自动检查 → 渲染看图修改 → 交付 PPTX、讲稿、预览。改内容只动 JSON，不手改 PPTX。
 
 ## 目录结构
 
 ```
-SKILL.md              # 给 agent 的操作手册（规则、流程、实测数值、坑）
+SKILL.md                 # 给 agent 的操作手册：流程、规则、踩坑清单、自检
+references/
+  outline.md             # 给网页端 GPT 的大纲提示词（页型编号 + 大中小图位）
+  info-style.md          # 视觉规范、组件、22 种版式、“要讲的事 → 版式”对照
+  visuals.md             # 配图来源、提示词、核对
+  speaker-notes.md       # 讲稿规则
+  embedded-video.md      # 视频内嵌
 scripts/
-  dense_deck.py       # 内容 JSON → PPTX
-  layouts.py          # 版面骨架与分区摆放
-  styled_deck.py      # 文本框、表格、流程图、图位等元素
-  lint.py             # 溢出 / 孤行 / 拆词 / 小字号 / 留白 校验
-  render.py           # 渲染成图 + 联系表 + PDF
-  notes_docx.py       # 逐页讲稿 → Word
-  insert_image.py     # 往图位里插真实图片
-  embed_video.py      # 把 mp4 真正内嵌进 PPTX（录屏页用）
-  prep_figs.py        # 生成前处理图位：图缺失则降级为占位框
-  fix_typography.py   # 中英混排与标点修正
-references/           # 风格系统、版式对照、密度数值、讲稿写法、踩坑记录
-assets/               # 演示用内容 JSON、机构标识、字体配置
+  dense_deck.py          # 内容 JSON → PPTX
+  info_style.py          # 蓝白信息图式：页面骨架、组件、版式
+  lint.py / render.py    # 检查 / 渲染
+  prep_figs.py           # 缺图 → 占位框
+  insert_image.py        # 往占位框填图
+  notes_docx.py          # 讲稿 → Word
+  embed_video.py         # 内嵌 mp4
+assets/
+  page-types.jpg/.json   # 16 个推荐页型：总览图 + 可套用骨架
+  info-demo.json         # 28 页示例
+  images/                # 示例数据图（示意数据）与重画脚本
+  components/            # 可复用图标
+  branding/              # 默认机构标识（请替换成你自己的）
 ```
 
 ## 已知边界
 
-- 默认风格来自一份**中文科研答辩 PPT**；换机构要换掉 `assets/branding/` 里的标识。
-- 仓库**不包含任何参考稿文件**——用别人的稿子提取风格时，请自行取得授权，不要把原稿提交上来。
-- `assets/branding/xmu-*.png` 是作者的默认机构素材，**使用前请替换成你自己的**。
+- 生成后仍要逐页看渲染图修改：脚本保证规范，版面是否饱满、图够不够大要靠看。
+- 配图需要你提供或用网页端 ChatGPT 生成；没有的图位先出占位框和提示词。
+- `assets/branding/xmu-*.png` 是作者的默认机构素材，使用前请替换。
 
 ## 许可
 
-代码与文档 MIT。`assets/branding/` 下的机构标识版权归原机构，不在 MIT 授权范围内，仅作默认占位，请自行替换。
+代码与文档 MIT。`assets/branding/` 下的机构标识版权归原机构，不在 MIT 授权范围内。
 
 ---
 
 ## English
 
-**research-ppt-skill** — a skill package for AI coding agents that turns a sample deck (e.g. a thesis defense) into a reusable pipeline for producing **native, editable** research presentation decks in the same visual language: it measures the reference's type scale, colors, layout coordinates and information density, then regenerates the deck with your own content.
+**research-ppt-skill** — a skill package for AI agents that produces **native, editable** research presentation decks (thesis defense, proposal, group meeting) in one consistent blue-and-white infographic style: page title, ✓ lead sentence, navy title band stating the page's single message, a dense but clean figure-and-bullet area (tech-route matrices, layered architectures, cycles, timelines, comparison tables), and a ■ takeaway bar.
 
-Contains an agent-facing `SKILL.md` plus Python scripts for deck generation (`python-pptx`), linting (overflow / orphan lines / word splitting / font-size floors), rendering previews, and producing per-slide speaker notes as Word.
+Includes an agent-facing `SKILL.md`, a library of 16 reusable page types (`assets/page-types.jpg` / `.json`, plus an outline prompt in `references/outline.md`), a component and layout library (`references/info-style.md`, 22 layouts), Python scripts for generation (`python-pptx`), linting (overflow, orphan lines, red-emphasis count, disclaimers), rendering previews and Word speaker notes, plus a 28-page example deck.
 
-Hard rules baked in from practice: red as a single emphasis per slide, minimum type sizes (body ≥16pt, tables ≥13pt), one judgment per slide, repeated agenda slides, and no defensive/disclaimer text on finished slides.
-
-MIT licensed. No reference decks are included in this repository. Branding assets belong to their owner and should be replaced.
+MIT licensed. Branding assets belong to their owner and should be replaced.

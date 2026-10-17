@@ -13,9 +13,12 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.oxml.xmlchemy import OxmlElement
 from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
-from styled_deck import BLUE, RED, INK, PALE, GRAY, ORANGE, box, text, header, cover, agenda, figure, zh_run
+from styled_deck import PALE, GRAY, ORANGE, box, text, header, cover, agenda, figure, zh_run
+BLUE, RED, INK = '073DA5', 'DE1515', '111722'     # 与 info_style 同一套蓝白规范
 from layouts import render_regions, render_conclusions
+from textfit import text_width
 from omml import to_omml, plain_omml
+import info_style
 
 MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006'
 A14 = 'http://schemas.microsoft.com/office/drawing/2010/main'
@@ -284,20 +287,8 @@ def flow(slide, spec):
 
 
 def stat(slide, spec):
-    """Key numbers side by side: items [{value, label, emphasis?}] → big number + short label, drawn
-    directly on the panel (card=True adds white cards; avoid). Real or "示意"-labelled numbers only."""
-    x, y, w, h = spec['box']
-    items = spec['items']
-    gap = spec.get('gap', 0.15)
-    cw = (w - gap * (len(items) - 1)) / len(items)
-    for i, it in enumerate(items):
-        cx = x + i * (cw + gap)
-        if spec.get('card', False):
-            box(slide, cx, y, cw, h, spec.get('fill', 'FFFFFF'))
-        text(slide, str(it['value']), cx + 0.05, y + 0.06, cw - 0.1, h * 0.55, spec.get('size', 26),
-             it.get('color', RED if it.get('emphasis') else BLUE), True, PP_ALIGN.CENTER, anchor='middle')
-        text(slide, it['label'], cx + 0.05, y + h * 0.58, cw - 0.1, h * 0.38, spec.get('label_size', 13),
-             INK, False, PP_ALIGN.CENTER)
+    """已停用：「大数字 + 下面一行小字」的数字块（用户：很丑）。关键数字写进正文句子或表格。"""
+    raise ValueError('stat 数字块已停用：把关键数字写进正文句子（可红色强调）或表格')
 
 
 def shadow(item, blur=90000, dist=25400, direction=5400000, alpha=34000):
@@ -357,6 +348,17 @@ def centered_text(slide, title, body, x, y, w, h, spec, highlights=()):
                 props.append(ea)
 
 
+def card_height(item, width, spec):
+    from textfit import measure
+    pad = spec.get('pad', 0.18)
+    hgt = 0.0
+    if item.get('title'):
+        hgt += measure(item['title'], spec.get('title_size', 16), width - 2 * pad, True)[1]
+    if item.get('body'):
+        hgt += measure(item['body'], spec.get('size', 15), width - 2 * pad, False, spacing=1.28)[1]
+    return hgt
+
+
 def cards(slide, spec):
     """并列卡片：浅蓝同色系圆角 + 柔和阴影，标题与正文都在框内居中（用户规则）。
     items: [{title, body, highlights}]；direction right|down；fills 给一组同色系浅蓝（按顺序取）。"""
@@ -367,6 +369,13 @@ def cards(slide, spec):
     count = len(items)
     fills = spec.get('fills') or [spec.get('fill', 'E7F0FA')]
     line = spec.get('line', 'B9CDE4')
+    if not down:
+        # 卡片高度按内容定（标题 + 正文行数），不把整块区域撑满；整排在区域内垂直居中
+        cw0 = (w - gap * (count - 1)) / count
+        need = max(card_height(it, cw0, spec) for it in items)
+        ch_row = min(h, spec.get('h_card', need + 0.6))
+        y = y + (h - ch_row) / 2
+        h = ch_row
     for index, item in enumerate(items):
         if down:
             cw, ch = w, (h - gap * (count - 1)) / count
@@ -386,18 +395,71 @@ def cards(slide, spec):
                       cx + pad, cy + pad * 0.6, cw - 2 * pad, ch - 1.2 * pad, spec, item.get('highlights', []))
 
 
+BAND_H = 0.44   # 蓝底白粗字标题条的高度（英寸）
+
+
 def panel(slide, spec):
+    """分区。title_style:
+       plain（默认）— 蓝色加粗居中小标题；
+       band — 整宽蓝底白粗字标题条（参考稿“可靠性评估”一类分区头），并列的 2–4 个模块用；
+       tab  — 左上蓝底白粗字标签（参考稿“能源传输设备”一类），标签宽度随文字。"""
     x, y, w, h = spec['box']
     box(slide, x, y, w, h, spec.get('fill', GRAY), line=spec.get('line'))
-    if spec.get('title'):
+    title, style = spec.get('title'), spec.get('title_style', 'plain')
+    if not title:
+        return
+    size = spec.get('size', 16)
+    if style == 'band':
+        box(slide, x, y, w, BAND_H, BLUE).name = '标题条-' + title[:10]
+        text(slide, title, x + 0.1, y, w - 0.2, BAND_H, size, 'FFFFFF', True, PP_ALIGN.CENTER, anchor='middle')
+    elif style == 'tab':
+        tw = min(w, text_width(title) * size / 72 * 1.04 + 0.5)
+        box(slide, x, y, tw, BAND_H, BLUE).name = '标签-' + title[:10]
+        text(slide, title, x + 0.1, y, tw - 0.2, BAND_H, size, 'FFFFFF', True, PP_ALIGN.CENTER, anchor='middle')
+    else:
         # 分区小标题一律居中（用户规则：居中了才好看）
-        text(slide, spec['title'], x+0.12, y+0.06, w-0.24, 0.4, spec.get('size', 16), BLUE, True,
-             PP_ALIGN.CENTER)
+        text(slide, title, x+0.12, y+0.06, w-0.24, 0.4, size, BLUE, True, PP_ALIGN.CENTER)
+
+
+def transition(slide, spec):
+    """参考稿的“A ➜[蓝底白粗字箭头] B”：说明从 A 到 B 的变化及原因。
+    spec: left, label（≤6 字）, right, size（默认 16）。整行垂直居中。"""
+    x, y, w, h = spec['box']
+    size = spec.get('size', 16)
+    label = spec['label']
+    aw = max(1.35, text_width(label) * 15 / 72 * 1.04 + 0.75)
+    ah = min(h, 0.62)
+    side = (w - aw - 0.3) / 2
+    text(slide, spec['left'], x, y, side, h, size, INK, False, PP_ALIGN.RIGHT, anchor='middle')
+    arrow = box(slide, x + side + 0.15, y + (h - ah) / 2, aw, ah, BLUE, MSO_SHAPE.RIGHT_ARROW)
+    arrow.name = '转折箭头-' + label
+    try:                              # 粗箭身、短箭头，白字放得下（参考稿第 4 页的样子）
+        arrow.adjustments[0] = 0.74
+        arrow.adjustments[1] = 0.42
+    except Exception:
+        pass
+    text(slide, label, x + side + 0.2, y + (h - ah) / 2, aw - 0.45, ah, 15, 'FFFFFF', True,
+         PP_ALIGN.CENTER, anchor='middle')
+    text(slide, spec['right'], x + side + aw + 0.3, y, side, h, size, INK, False, PP_ALIGN.LEFT, anchor='middle')
+
+
+WARNINGS = []
+
+
+def check_terms(spec, where):
+    """高亮/加粗词必须是正文的实际子串，否则静默失效（踩过）。"""
+    body = spec.get('text') or spec.get('takeaway') or ''
+    for key in ('highlights', 'strong', 'emphasis'):
+        for term in spec.get(key) or []:
+            if isinstance(term, str) and body and term not in body:
+                WARNINGS.append(f'{where}: {key} 词“{term}”不在正文里，会静默失效')
 
 
 def block(slide, spec):
     x, y, w, h = spec['box']
     kind = spec['type']
+    if kind == 'text':
+        check_terms(spec, '第%s页' % getattr(slide, '_page_no', '?'))
     if kind == 'panel':
         panel(slide, spec)
     elif kind == 'text':
@@ -417,6 +479,10 @@ def block(slide, spec):
         stat(slide, spec)
     elif kind == 'cards':
         cards(slide, spec)
+    elif kind == 'transition':
+        transition(slide, spec)
+    elif info_style.dispatch(slide, spec, block):
+        pass
     elif kind == 'formula':
         formula(slide, spec)
     elif kind == 'figure':
@@ -428,9 +494,16 @@ def block(slide, spec):
         raise ValueError(f'Unsupported block: {kind}')
 
 
+def _resolve_file(v, base):
+    """"@/components/x.png" 指本技能 assets 目录下的内置素材；其余相对路径按内容 JSON 所在目录解析。"""
+    if str(v).startswith('@/'):
+        return str(Path(__file__).resolve().parents[1] / 'assets' / str(v)[2:])
+    return str(Path(v) if Path(v).is_absolute() else base / v)
+
+
 def resolve_files(value, base):
     if isinstance(value, dict):
-        return {k: (str(Path(v) if Path(v).is_absolute() else base / v) if k == 'file' and v else resolve_files(v, base))
+        return {k: (_resolve_file(v, base) if k == 'file' and v else resolve_files(v, base))
                 for k, v in value.items()}
     if isinstance(value, list):
         return [resolve_files(v, base) for v in value]
@@ -449,27 +522,19 @@ def build(content, output, base):
     for number, spec in enumerate(content['slides'], 1):
         spec = resolve_files(spec, base)
         slide = deck.slides.add_slide(deck.slide_layouts[6])
+        slide._page_no = number
         if spec.get('type') == 'cover':
-            cover(slide, spec, meta)
+            info_style._COVER_BLOCK[0] = block
+            info_style.cover_page(slide, spec, meta)
         elif spec.get('type') == 'agenda':
-            agenda(slide, spec, meta)
+            info_style.agenda_page(slide, spec, meta)
+        elif spec.get('type') == 'end':
+            info_style.end_page(slide, spec, meta)
         else:
-            header(slide, spec['section'], spec['section_title'], spec['title'], number, meta)
-            if spec.get('layout') == 'conclusions':
-                render_conclusions(slide, spec, text, panel, BLUE)
-            elif spec.get('layout'):
-                print(f'slide {number}: layout {spec["layout"]}')
-                render_regions(slide, spec, block, panel)
-            for item in spec.get('blocks', []):
-                block(slide, item)
-            if spec.get('takeaway'):
-                # 页底结论条：比正文大一号（用户规则：全页最该被记住的一句）
-                takeaway_y = 6.60 if spec.get('note') else 6.78
-                box(slide, 0.5, takeaway_y, 12.55, 0.40, ORANGE)
-                text(slide, spec['takeaway'], 0.65, takeaway_y+0.03, 12.2, 0.34, 16, INK, False,
-                     highlights=spec.get('emphasis', []))
-            if spec.get('note'):
-                text(slide, spec['note'], 0.6, 7.02, 12.0, 0.21, 11, INK).name = '页脚注释'
+            for key in ('lead', 'summary'):
+                if isinstance(spec.get(key), dict):
+                    check_terms({'takeaway': spec[key]['text'], 'emphasis': spec[key].get('highlights')}, f'第{number}页{key}')
+            info_style.render_page(slide, spec, number, meta, block)
         # Speaker notes are for the speaker only; layout metadata stays in the content JSON.
         if spec.get('notes'):
             slide.notes_slide.notes_text_frame.text = spec['notes']
@@ -497,6 +562,8 @@ def build(content, output, base):
             (folder / f'{name}.prompt.md').write_text(f'# 第{page}页 · {label} {aspect}\n\n{prompt}\n', encoding='utf-8')
             print(f'  第{page}页 {label} -> images/{name}.prompt.md')
     deck.save(output)
+    for warning in WARNINGS:
+        print('  ! ' + warning)
     print(f'Built {len(deck.slides)} pages -> {output}')
 
 
