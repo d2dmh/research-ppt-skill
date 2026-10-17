@@ -80,6 +80,16 @@
 
 另外，渲染预览要 LibreOffice（`soffice` 在 PATH 里）。Windows 上也能跑，但预览字体和 PowerPoint 有差别，终稿建议在 PowerPoint 里过一遍。
 
+到底要装哪些东西，按你的环境看这张表：
+
+| 你的环境 | 要做的 |
+|---|---|
+| Hermes Agent | 把仓库 clone 到 `~/.hermes/skills/productivity/`；建议同时装 `chatgpt-web-planning`，大纲和插画交给网页端 |
+| Claude Code / Codex | 把目录放进仓库，在会话里让它读 `SKILL.md`；网页端协作那两步看它自己有没有对应的能力，没有就手工 |
+| 不想用 agent | 也能跑：自己写 `content.json`，直接调 `scripts/dense_deck.py`，只是大纲、配图和看图修改都得自己来 |
+
+Python 3.10 以上就够，我这台是 3.12 + python-pptx 1.0.2 实测的。
+
 ---
 
 ## 一分钟上手
